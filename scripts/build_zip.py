@@ -14,7 +14,8 @@ def build_github_ready_zip():
     dist_zip = os.path.join(dist_dir, 'akg-cmms-sistemi.zip')
     dist_github_zip = os.path.join(dist_dir, 'akg-cmms-github-release.zip')
     
-    exclude_dirs = {'.git', 'node_modules', 'dist', '.cache', '__pycache__'}
+    # Exclude version control, temporary artifacts and dependencies
+    exclude_dirs = {'.git', 'node_modules', '.cache', '__pycache__'}
     exclude_files = {'.DS_Store', 'Thumbs.db', 'test_win.zip', 'temp_pack.zip', 'temp_github.zip', 'akg-cmms-sistemi.zip', 'akg-cmms-github-release.zip'}
     
     # Ensure public folder exists
