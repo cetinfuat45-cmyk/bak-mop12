@@ -1,0 +1,6 @@
+{
+  "name": "AKG Bakım & Arıza Takip Sistemi",
+  "description": "AKG Saha Bakım ve Arıza Takip Sistemi (CMMS) canlı operatör paneli, karekodlu makine doğrulama, müdahale yönetimi ve süreç akış şemaları.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
