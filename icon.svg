@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <rect x="24" y="24" width="464" height="464" rx="80" fill="none" stroke="#06b6d4" stroke-width="4" opacity="0.3"/>
+  <!-- Cog & Wrench -->
+  <g transform="translate(256,256)">
+    <circle r="130" fill="none" stroke="url(#cyanGrad)" stroke-width="38" stroke-dasharray="60 42"/>
+    <circle r="70" fill="#0f172a" stroke="url(#cyanGrad)" stroke-width="12"/>
+    <rect x="-24" y="-80" width="48" height="160" rx="12" fill="url(#cyanGrad)"/>
+    <rect x="-80" y="-24" width="160" height="48" rx="12" fill="url(#cyanGrad)"/>
+    <circle r="34" fill="#020617"/>
+  </g>
+  <text x="256" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="900" fill="#38bdf8" text-anchor="middle" letter-spacing="4">AKG CMMS</text>
+</svg>
