@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Wrench,
-  QrCode,
   Settings,
   LogOut,
   Bell,
@@ -17,7 +16,6 @@ import {
   Trash2,
   ChevronDown,
   ShieldAlert,
-  GitBranch,
   Layers,
   Sparkles,
   Download,
@@ -25,11 +23,11 @@ import {
 } from 'lucide-react';
 import { Operator } from '../../types';
 import { downloadProjectZip } from '../../services/zipDownloadService';
-import { PWAInstallButton } from './PWAInstallButton';
 
 interface CmmsHeaderProps {
   currentOperator: Operator;
   dailyStatsText: string;
+  unreadMessageCount?: number;
   onLogout: () => void;
   onOpenQrScanner: () => void;
   onOpenClosedToday: () => void;
@@ -51,6 +49,7 @@ interface CmmsHeaderProps {
 export const CmmsHeader: React.FC<CmmsHeaderProps> = ({
   currentOperator,
   dailyStatsText,
+  unreadMessageCount = 0,
   onLogout,
   onOpenQrScanner,
   onOpenClosedToday,
@@ -85,7 +84,7 @@ export const CmmsHeader: React.FC<CmmsHeaderProps> = ({
 
   return (
     <header className="bg-slate-900 border-b border-slate-800 text-white px-3 sm:px-5 py-2.5 flex items-center justify-between shadow-md relative z-40">
-      {/* Left: Brand + Mode Switcher */}
+      {/* Left: Brand */}
       <div className="flex items-center gap-2 sm:gap-4">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-500/20">
@@ -98,35 +97,25 @@ export const CmmsHeader: React.FC<CmmsHeaderProps> = ({
                 CMMS
               </span>
             </div>
-            <div className="text-[10px] text-slate-400 hidden sm:block font-medium">
-              Saha Arıza & Müdahale Sistemi
-            </div>
           </div>
         </div>
-
-        {/* Dedicated Flowchart Mode Switcher */}
-        <button
-          onClick={onSwitchToFlowchart}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-950/80 border border-cyan-500/60 text-cyan-300 hover:bg-cyan-900/90 hover:border-cyan-400 transition-all ml-2 shadow-lg shadow-cyan-950/50 active:scale-95"
-          title="Süreç ve Mimari Akış Şemasına Geçiş Yap"
-        >
-          <GitBranch className="w-4 h-4 text-cyan-400" />
-          <span>Akış Şeması & Mimari</span>
-        </button>
       </div>
 
-      {/* Right: PWA Install + QR Quick Scan + Operator Info + Menu */}
+      {/* Right: Operator Info + Quick Messages + Menu */}
       <div className="flex items-center gap-1.5 sm:gap-2.5">
-        {/* PWA Install Button */}
-        <PWAInstallButton variant="header" />
-
-        {/* Quick QR button */}
+        {/* Quick Message Button with Notification Badge */}
         <button
-          onClick={onOpenQrScanner}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-md shadow-cyan-600/20 active:scale-95"
+          onClick={onOpenMessageModal}
+          className="relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-750 text-slate-200 border border-slate-700 text-xs font-bold transition-all shadow-sm active:scale-95"
+          title="Operatörler Arası Canlı Mesajlaşma (P2P)"
         >
-          <QrCode className="w-4 h-4" />
-          <span className="hidden sm:inline">Karekod Okut</span>
+          <MessageSquare className="w-4 h-4 text-cyan-400" />
+          <span className="hidden md:inline">Mesajlar</span>
+          {unreadMessageCount > 0 && (
+            <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-cyan-500 text-slate-950 font-black text-[10px] flex items-center justify-center animate-pulse shadow-sm shadow-cyan-500/50">
+              {unreadMessageCount}
+            </span>
+          )}
         </button>
 
         {/* Operator Profile Card */}
@@ -211,17 +200,6 @@ export const CmmsHeader: React.FC<CmmsHeaderProps> = ({
                 <span>✉️ Mesaj Gönder (P2P)</span>
               </button>
 
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  onOpenQrScanner();
-                }}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-800 flex items-center gap-2.5 transition-colors"
-              >
-                <QrCode className="w-4 h-4 text-cyan-400" />
-                <span>Manuel QR Okut</span>
-              </button>
-
               {/* Admin Special Options */}
               {isAdmin && (
                 <>
@@ -290,17 +268,6 @@ export const CmmsHeader: React.FC<CmmsHeaderProps> = ({
               <div className="px-3 py-1.5 mt-1 border-t border-b border-slate-800 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Görünüm & Tercihler
               </div>
-
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  onSwitchToFlowchart();
-                }}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-800 flex items-center gap-2.5 transition-colors text-cyan-400 font-semibold"
-              >
-                <GitBranch className="w-4 h-4 text-cyan-400" />
-                <span>📊 Akış Şeması & Mimari</span>
-              </button>
 
               <button
                 onClick={() => {

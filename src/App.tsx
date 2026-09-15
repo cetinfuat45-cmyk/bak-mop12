@@ -138,13 +138,46 @@ export default function App() {
       setMessages(allMsgs);
       if (allMsgs.length > 0 && currentOperator) {
         const latest = allMsgs[0];
-        // Check if message is for me or ALL and not older than 1 hour
+        const msgTime =
+          typeof latest.timestamp === 'number'
+            ? latest.timestamp
+            : new Date(latest.timestamp).getTime();
+
+        const isFieldAlert =
+          latest.isFieldNotification ||
+          latest.sender.toLowerCase().includes('saha') ||
+          latest.sender === 'Sahadan Bildirim';
+
         const isTarget =
-          latest.target === 'ALL' || latest.target === currentOperator.name;
-        const isRecent =
-          Date.now() - new Date(latest.timestamp).getTime() < 3600000;
+          latest.target === 'ALL' ||
+          isFieldAlert ||
+          latest.target === currentOperator.name ||
+          (latest.target && latest.target.toLocaleLowerCase('tr-TR').includes(currentOperator.name.toLocaleLowerCase('tr-TR'))) ||
+          (latest.targetUsers && latest.targetUsers.some(u => u.trim().toLocaleLowerCase('tr-TR') === currentOperator.name.trim().toLocaleLowerCase('tr-TR')));
+
+        const isRecent = !isNaN(msgTime) && Date.now() - msgTime < 24 * 3600000;
         if (isTarget && isRecent && latest.sender !== currentOperator.name) {
           setActiveBannerMessage(latest);
+          if (isFieldAlert) {
+            soundEffects.playAlarm();
+            Swal.fire({
+              title: '🚨 SAHADAN BİLDİRİM',
+              text: `${latest.sender}: ${latest.text}`,
+              icon: 'warning',
+              background: '#facc15',
+              color: '#020617',
+              iconColor: '#020617',
+              toast: true,
+              position: 'top-end',
+              timer: 6000,
+              showConfirmButton: false,
+              customClass: {
+                popup: 'border-2 border-yellow-600 font-bold shadow-2xl'
+              }
+            });
+          } else {
+            soundEffects.playMessageChime();
+          }
         }
       }
     });
@@ -185,6 +218,28 @@ export default function App() {
     const m = totalMins % 60;
     return `(Bugün ${closedToday.length} iş • ${h}s ${m}d)`;
   };
+
+  // Count recent messages addressed to current operator (within last 24 hours)
+  const unreadMessageCount = currentOperator
+    ? messages.filter((m) => {
+        const msgTime =
+          typeof m.timestamp === 'number'
+            ? m.timestamp
+            : new Date(m.timestamp).getTime();
+        const isRecent = !isNaN(msgTime) && Date.now() - msgTime < 24 * 3600000;
+        const isFieldAlert =
+          m.isFieldNotification ||
+          m.sender.toLowerCase().includes('saha') ||
+          m.sender === 'Sahadan Bildirim';
+        const isForMe =
+          m.target === 'ALL' ||
+          isFieldAlert ||
+          m.target === currentOperator.name ||
+          (m.target && m.target.toLocaleLowerCase('tr-TR').includes(currentOperator.name.toLocaleLowerCase('tr-TR'))) ||
+          (m.targetUsers && m.targetUsers.some(u => u.trim().toLocaleLowerCase('tr-TR') === currentOperator.name.trim().toLocaleLowerCase('tr-TR')));
+        return isForMe && isRecent && m.sender !== currentOperator.name;
+      }).length
+    : 0;
 
   // Login Handler
   const handleLogin = async (pin: string): Promise<boolean> => {
@@ -286,15 +341,29 @@ export default function App() {
     if (!currentOperator) return;
 
     // Automatically calculate elapsed minutes for this helper from their join time
-    let autoMins = 10;
+    let autoMins = 5;
     let joinedTimeStr = '';
-    if (fault.helperJoinedAt && fault.helperJoinedAt[currentOperator.name]) {
-      const joinMs = new Date(fault.helperJoinedAt[currentOperator.name]).getTime();
-      autoMins = Math.max(1, Math.round((Date.now() - joinMs) / 60000));
-      joinedTimeStr = new Date(joinMs).toLocaleTimeString('tr-TR', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+    const opUpper = currentOperator.name.trim().toLocaleUpperCase('tr-TR');
+
+    let joinIso: string | undefined = undefined;
+    if (fault.helperJoinedAt) {
+      const matchedKey = Object.keys(fault.helperJoinedAt).find(
+        (k) => k.trim().toLocaleUpperCase('tr-TR') === opUpper
+      );
+      if (matchedKey) {
+        joinIso = fault.helperJoinedAt[matchedKey];
+      }
+    }
+
+    if (joinIso) {
+      const joinMs = new Date(joinIso).getTime();
+      if (!isNaN(joinMs)) {
+        autoMins = Math.max(1, Math.round((Date.now() - joinMs) / 60000));
+        joinedTimeStr = new Date(joinMs).toLocaleTimeString('tr-TR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
     } else if (fault.startedAt) {
       autoMins = Math.max(
         1,
@@ -380,22 +449,33 @@ export default function App() {
     });
   };
 
-  // Update status without closing
+  // Update status without closing (Parça Bekliyor, Devredildi, Arızadan Çıkma vb.)
   const handleSubmitStatusUpdate = async (
     status: Fault['status'],
-    note?: string
+    note?: string,
+    minutes?: number
   ) => {
     if (!selectedFaultForIntervention) return;
     await cmmsService.updateFaultStatus(
       selectedFaultForIntervention.id,
       status,
-      note
+      note,
+      currentOperator?.name,
+      minutes
     );
+    const label =
+      status === 'Devredildi'
+        ? 'Vardiyaya Devredildi'
+        : status === 'Parça Bekliyor'
+        ? 'Parça Beklemeye Alındı'
+        : status === 'Açık'
+        ? 'Arızadan Çıkıldı (Açık)'
+        : status;
     Swal.fire({
-      icon: 'info',
-      title: 'Durum Güncellendi',
-      text: `Arıza durumu [${status}] olarak güncellendi.`,
-      timer: 1800,
+      icon: 'success',
+      title: 'Müdahale Kaydı İşlendi',
+      text: `${selectedFaultForIntervention.machine}: [${label}] olarak güncellendi ve ${minutes || 0} dakikalık çalışma süreniz loglandı.`,
+      timer: 2200,
       showConfirmButton: false,
       background: '#0f172a',
       color: '#f8fafc'
@@ -576,7 +656,7 @@ export default function App() {
   // -------------------------------------------------------------
   return (
     <div
-      className="flex flex-col h-screen bg-slate-950 text-slate-100 antialiased overflow-hidden font-sans"
+      className="flex flex-col h-[100dvh] w-full max-w-full bg-slate-950 text-slate-100 antialiased overflow-hidden font-sans"
       style={{ fontSize: `${viewSettings.fontSize}px` }}
     >
       {/* 1. OPERATIONAL CMMS VIEW */}
@@ -586,6 +666,7 @@ export default function App() {
           <CmmsHeader
             currentOperator={currentOperator}
             dailyStatsText={getDailyStatsText()}
+            unreadMessageCount={unreadMessageCount}
             onLogout={handleLogout}
             onOpenQrScanner={() => {
               setTargetScanFault(null);
@@ -634,6 +715,7 @@ export default function App() {
               onLeaveHelper={handleLeaveHelper}
               onReassign={handleReassign}
               allOperators={config.operators}
+              onUpdateViewSettings={handleUpdateViewSettings}
             />
           </main>
 
@@ -706,7 +788,14 @@ export default function App() {
             onClose={() => setIsMessageModalOpen(false)}
             currentOperator={currentOperator}
             operators={config.operators}
+            messages={messages}
             onSendMessage={handleSendMessage}
+            onDeleteMessage={async (id) => {
+              await cmmsService.deleteMessage(id);
+            }}
+            onClearAllMessages={async () => {
+              await cmmsService.clearAllMessages();
+            }}
             defaultTarget={messageReplyTarget}
           />
 
@@ -716,6 +805,9 @@ export default function App() {
             messages={messages}
             onDeleteMessage={async (id) => {
               await cmmsService.deleteMessage(id);
+            }}
+            onClearAllMessages={async () => {
+              await cmmsService.clearAllMessages();
             }}
           />
 

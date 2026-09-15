@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Flame,
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Fault, Operator, ViewSettings } from '../../types';
 import { FaultCard } from './FaultCard';
+import { FaultRow } from './FaultRow';
 import {
   FAULT_COLOR_CODES,
   ORDERED_FAULT_TYPES,
@@ -27,6 +28,7 @@ interface FaultsListProps {
   onLeaveHelper: (fault: Fault) => void;
   onReassign: (fault: Fault, newOpName: string) => void;
   allOperators: Operator[];
+  onUpdateViewSettings?: (newSettings: ViewSettings) => void;
 }
 
 export const FaultsList: React.FC<FaultsListProps> = ({
@@ -38,14 +40,25 @@ export const FaultsList: React.FC<FaultsListProps> = ({
   onJoinHelper,
   onLeaveHelper,
   onReassign,
-  allOperators
+  allOperators,
+  onUpdateViewSettings
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('ALL');
   const [filterMode, setFilterMode] = useState<'all' | 'mine' | 'unassigned'>(
     'all'
   );
-  const [groupByType, setGroupByType] = useState<boolean>(true);
+  const [groupByType, setGroupByType] = useState<boolean>(
+    viewSettings.groupBy !== 'none'
+  );
+
+  // Sync when viewSettings.groupBy updates from settings modal
+  useEffect(() => {
+    setGroupByType(viewSettings.groupBy !== 'none');
+  }, [viewSettings.groupBy]);
+
+  const isRowMode = viewSettings.displayMode === 'row';
+  const isCompactMode = viewSettings.displayMode === 'compact';
 
   const todayStr = new Date().toLocaleDateString('tr-TR');
 
@@ -131,36 +144,36 @@ export const FaultsList: React.FC<FaultsListProps> = ({
     { id: 'ALL', label: 'Tümü', shortLabel: 'Tümü', count: openFaults.length, color: '#38BDF8' },
     {
       id: 'MEKANİK ARIZA',
-      label: 'MEKANİK ARIZA',
-      shortLabel: 'Mekanik',
+      label: 'Mek Arıza',
+      shortLabel: 'Mek Arıza',
       count: openFaults.filter((f) => isMatchingFaultGroup(f.faultType, 'MEKANİK ARIZA')).length,
       color: FAULT_COLOR_CODES.MEKANIK
     },
     {
       id: 'ELEKTRİK ARIZA',
-      label: 'ELEKTRİK ARIZA',
-      shortLabel: 'Elektrik',
+      label: 'Elek Arıza',
+      shortLabel: 'Elek Arıza',
       count: openFaults.filter((f) => isMatchingFaultGroup(f.faultType, 'ELEKTRİK ARIZA')).length,
       color: FAULT_COLOR_CODES.ELEKTRIK
     },
     {
       id: 'İŞ GÜVENLİĞİ !!!',
-      label: 'İŞ GÜVENLİĞİ !!!',
-      shortLabel: 'İSG !!!',
+      label: 'İş Güvenliği',
+      shortLabel: 'İSG',
       count: openFaults.filter((f) => isMatchingFaultGroup(f.faultType, 'İŞ GÜVENLİĞİ !!!')).length,
       color: FAULT_COLOR_CODES.ISG
     },
     {
       id: 'PLANLI BAKIM KODU',
-      label: 'PLANLI BAKIM KODU',
+      label: 'Planlı Bakım',
       shortLabel: 'Planlı Bakım',
       count: openFaults.filter((f) => isMatchingFaultGroup(f.faultType, 'PLANLI BAKIM KODU')).length,
       color: FAULT_COLOR_CODES.PLANLI_BAKIM
     },
     {
       id: 'TEKRAR EDEN ARIZA  !!!!',
-      label: 'TEKRAR EDEN ARIZA  !!!!',
-      shortLabel: 'Tekrar Eden !!!!',
+      label: 'Tekrar Eden',
+      shortLabel: 'Tekrar Eden',
       count: openFaults.filter((f) => isMatchingFaultGroup(f.faultType, 'TEKRAR EDEN ARIZA  !!!!')).length,
       color: FAULT_COLOR_CODES.TEKRAR_EDEN
     }
@@ -189,11 +202,11 @@ export const FaultsList: React.FC<FaultsListProps> = ({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-3 sm:p-5 max-w-7xl mx-auto w-full space-y-6">
+    <div className="flex-1 overflow-y-auto p-2 sm:p-4 md:p-6 max-w-[1600px] mx-auto w-full space-y-4 transition-all">
       {/* Search & Filter Toolbar */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 shadow-lg flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 sm:p-3 shadow-lg flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 sm:gap-3">
         {/* Search input */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-[240px]">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -205,8 +218,8 @@ export const FaultsList: React.FC<FaultsListProps> = ({
         </div>
 
         {/* Quick Scope Filter buttons & Grouping Toggle */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
-          <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               onClick={() => setFilterMode('all')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
@@ -243,7 +256,16 @@ export const FaultsList: React.FC<FaultsListProps> = ({
 
           {/* Group View Toggle */}
           <button
-            onClick={() => setGroupByType(!groupByType)}
+            onClick={() => {
+              const nextState = !groupByType;
+              setGroupByType(nextState);
+              if (onUpdateViewSettings) {
+                onUpdateViewSettings({
+                  ...viewSettings,
+                  groupBy: nextState ? 'faultType' : 'none'
+                });
+              }
+            }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
               groupByType
                 ? 'bg-indigo-950/80 border-indigo-500 text-indigo-300 shadow-md shadow-indigo-950/30'
@@ -268,15 +290,15 @@ export const FaultsList: React.FC<FaultsListProps> = ({
 
       {/* Color Standards Legend & Quick Category Filter */}
       <div className="space-y-2">
-        {/* Category Pills with Exact Color Badges */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+        {/* Category Pills with Exact Color Badges - Auto wrap, responsive auto sizing */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
           {categories.map((c, cIdx) => {
             const isActive = selectedType === c.id;
             return (
               <button
                 key={`category-filter-${c.id}-${cIdx}`}
                 onClick={() => setSelectedType(c.id)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all border shadow-sm"
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl font-bold transition-all border shadow-sm flex-shrink-0"
                 style={{
                   borderColor: isActive
                     ? c.color
@@ -290,19 +312,11 @@ export const FaultsList: React.FC<FaultsListProps> = ({
               >
                 {c.id !== 'ALL' && (
                   <span
-                    className="w-2.5 h-2.5 rounded-full"
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                     style={{ backgroundColor: c.color }}
                   />
                 )}
                 <span>{c.label}</span>
-                {c.id !== 'ALL' && (
-                  <span
-                    className="text-[10px] font-mono opacity-70"
-                    style={{ color: c.color }}
-                  >
-                    {c.color}
-                  </span>
-                )}
                 <span
                   className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
                   style={{
@@ -366,21 +380,9 @@ export const FaultsList: React.FC<FaultsListProps> = ({
                       <TypeIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-sm sm:text-base font-extrabold text-white tracking-wide">
-                          {group.config.name}
-                        </h3>
-                        <span
-                          className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold tracking-wider"
-                          style={{
-                            backgroundColor: `${group.config.color}25`,
-                            color: group.config.color,
-                            border: `1px solid ${group.config.color}60`
-                          }}
-                        >
-                          {group.config.color}
-                        </span>
-                      </div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-white tracking-wide">
+                        {group.config.shortName || group.config.name}
+                      </h3>
                       <p className="text-[11px] text-slate-400 mt-0.5">
                         {group.items.length} arıza kaydı müdahale bekliyor
                       </p>
@@ -401,29 +403,50 @@ export const FaultsList: React.FC<FaultsListProps> = ({
                   </div>
                 </div>
 
-                {/* Group Faults Grid */}
-                <div
-                  className={`grid gap-4 ${
-                    viewSettings.displayMode === 'card'
-                      ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                      : 'grid-cols-1'
-                  }`}
-                >
-                  {group.items.map((f, fIdx) => (
-                    <FaultCard
-                      key={`grouped-${group.config.id}-${f.id || 'flt'}-${fIdx}`}
-                      fault={f}
-                      currentOperator={currentOperator}
-                      viewSettings={viewSettings}
-                      onStartIntervention={onStartIntervention}
-                      onOpenInterventionModal={onOpenInterventionModal}
-                      onJoinHelper={onJoinHelper}
-                      onLeaveHelper={onLeaveHelper}
-                      onReassign={onReassign}
-                      allOperators={allOperators}
-                    />
-                  ))}
-                </div>
+                {/* Group Faults Grid / Row List */}
+                {isRowMode ? (
+                  <div className="flex flex-col gap-1.5 w-full">
+                    {group.items.map((f, fIdx) => (
+                      <FaultRow
+                        key={`grouped-row-${group.config.id}-${f.id || 'flt'}-${fIdx}`}
+                        fault={f}
+                        currentOperator={currentOperator}
+                        viewSettings={viewSettings}
+                        onStartIntervention={onStartIntervention}
+                        onOpenInterventionModal={onOpenInterventionModal}
+                        onJoinHelper={onJoinHelper}
+                        onLeaveHelper={onLeaveHelper}
+                        onReassign={onReassign}
+                        allOperators={allOperators}
+                        hideTypeBadge={true}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div
+                    className={`grid gap-3 ${
+                      isCompactMode
+                        ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4'
+                        : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                    }`}
+                  >
+                    {group.items.map((f, fIdx) => (
+                      <FaultCard
+                        key={`grouped-${group.config.id}-${f.id || 'flt'}-${fIdx}`}
+                        fault={f}
+                        currentOperator={currentOperator}
+                        viewSettings={viewSettings}
+                        onStartIntervention={onStartIntervention}
+                        onOpenInterventionModal={onOpenInterventionModal}
+                        onJoinHelper={onJoinHelper}
+                        onLeaveHelper={onLeaveHelper}
+                        onReassign={onReassign}
+                        allOperators={allOperators}
+                        hideTypeBadge={true}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
             );
           })}
@@ -438,28 +461,47 @@ export const FaultsList: React.FC<FaultsListProps> = ({
                 <Clock className="w-4 h-4 text-amber-400" />
                 <span>Üzerimdeki Görevler ({myAssignedTasks.length})</span>
               </div>
-              <div
-                className={`grid gap-4 ${
-                  viewSettings.displayMode === 'card'
-                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                    : 'grid-cols-1'
-                }`}
-              >
-                {myAssignedTasks.map((f, fIdx) => (
-                  <FaultCard
-                    key={`my-task-${f.id || 'flt'}-${fIdx}`}
-                    fault={f}
-                    currentOperator={currentOperator}
-                    viewSettings={viewSettings}
-                    onStartIntervention={onStartIntervention}
-                    onOpenInterventionModal={onOpenInterventionModal}
-                    onJoinHelper={onJoinHelper}
-                    onLeaveHelper={onLeaveHelper}
-                    onReassign={onReassign}
-                    allOperators={allOperators}
-                  />
-                ))}
-              </div>
+              {isRowMode ? (
+                <div className="flex flex-col gap-1.5 w-full">
+                  {myAssignedTasks.map((f, fIdx) => (
+                    <FaultRow
+                      key={`my-row-${f.id || 'flt'}-${fIdx}`}
+                      fault={f}
+                      currentOperator={currentOperator}
+                      viewSettings={viewSettings}
+                      onStartIntervention={onStartIntervention}
+                      onOpenInterventionModal={onOpenInterventionModal}
+                      onJoinHelper={onJoinHelper}
+                      onLeaveHelper={onLeaveHelper}
+                      onReassign={onReassign}
+                      allOperators={allOperators}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className={`grid gap-3 ${
+                    isCompactMode
+                      ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4'
+                      : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                  }`}
+                >
+                  {myAssignedTasks.map((f, fIdx) => (
+                    <FaultCard
+                      key={`my-task-${f.id || 'flt'}-${fIdx}`}
+                      fault={f}
+                      currentOperator={currentOperator}
+                      viewSettings={viewSettings}
+                      onStartIntervention={onStartIntervention}
+                      onOpenInterventionModal={onOpenInterventionModal}
+                      onJoinHelper={onJoinHelper}
+                      onLeaveHelper={onLeaveHelper}
+                      onReassign={onReassign}
+                      allOperators={allOperators}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
@@ -480,28 +522,47 @@ export const FaultsList: React.FC<FaultsListProps> = ({
                 </span>
               </div>
 
-              <div
-                className={`grid gap-4 ${
-                  viewSettings.displayMode === 'card'
-                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                    : 'grid-cols-1'
-                }`}
-              >
-                {poolTasks.map((f, fIdx) => (
-                  <FaultCard
-                    key={`pool-task-${f.id || 'flt'}-${fIdx}`}
-                    fault={f}
-                    currentOperator={currentOperator}
-                    viewSettings={viewSettings}
-                    onStartIntervention={onStartIntervention}
-                    onOpenInterventionModal={onOpenInterventionModal}
-                    onJoinHelper={onJoinHelper}
-                    onLeaveHelper={onLeaveHelper}
-                    onReassign={onReassign}
-                    allOperators={allOperators}
-                  />
-                ))}
-              </div>
+              {isRowMode ? (
+                <div className="flex flex-col gap-1.5 w-full">
+                  {poolTasks.map((f, fIdx) => (
+                    <FaultRow
+                      key={`pool-row-${f.id || 'flt'}-${fIdx}`}
+                      fault={f}
+                      currentOperator={currentOperator}
+                      viewSettings={viewSettings}
+                      onStartIntervention={onStartIntervention}
+                      onOpenInterventionModal={onOpenInterventionModal}
+                      onJoinHelper={onJoinHelper}
+                      onLeaveHelper={onLeaveHelper}
+                      onReassign={onReassign}
+                      allOperators={allOperators}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className={`grid gap-3 ${
+                    isCompactMode
+                      ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4'
+                      : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                  }`}
+                >
+                  {poolTasks.map((f, fIdx) => (
+                    <FaultCard
+                      key={`pool-task-${f.id || 'flt'}-${fIdx}`}
+                      fault={f}
+                      currentOperator={currentOperator}
+                      viewSettings={viewSettings}
+                      onStartIntervention={onStartIntervention}
+                      onOpenInterventionModal={onOpenInterventionModal}
+                      onJoinHelper={onJoinHelper}
+                      onLeaveHelper={onLeaveHelper}
+                      onReassign={onReassign}
+                      allOperators={allOperators}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           )}
         </>

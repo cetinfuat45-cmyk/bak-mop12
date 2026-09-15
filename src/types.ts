@@ -143,9 +143,11 @@ export interface SystemMessage {
   id: string;
   sender: string;
   target: string; // 'ALL' or operator name
+  targetUsers?: string[];
   text: string;
   timestamp: string | number;
   readBy?: string[];
+  isFieldNotification?: boolean;
 }
 
 export interface SystemConfig {

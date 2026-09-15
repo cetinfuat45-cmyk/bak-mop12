@@ -3,13 +3,16 @@ import {
   KeyRound,
   ShieldCheck,
   User,
+  Users,
   Wrench,
   Delete,
   Download,
   RefreshCw,
   LogIn,
   Search,
-  CheckCircle2
+  CheckCircle2,
+  X,
+  ChevronRight
 } from 'lucide-react';
 import { Operator } from '../../types';
 import { soundEffects } from '../../services/soundEffects';
@@ -36,6 +39,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [syncSuccess, setSyncSuccess] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [downloadingZip, setDownloadingZip] = useState(false);
+  // Registered technician list is hidden on startup by default (user request)
+  const [showTechniciansModal, setShowTechniciansModal] = useState(false);
 
   const handleDownloadZip = async () => {
     if (downloadingZip) return;
@@ -104,6 +109,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   };
 
   const handleQuickSelect = (op: Operator) => {
+    setShowTechniciansModal(false);
     setPin(op.pin);
     submitPin(op.pin);
   };
@@ -134,11 +140,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         }
       } else if (e.key === 'Escape') {
         handleClear();
+        if (showTechniciansModal) {
+          setShowTechniciansModal(false);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [pin, loading]);
+  }, [pin, loading, showTechniciansModal]);
 
   // Filtered operators for quick selection
   const filteredOperators = operators.filter((op) => {
@@ -159,7 +168,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       <div className="absolute bottom-10 right-10 w-72 h-72 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Floating Action Bar */}
-      <div className="w-full max-w-4xl flex items-center justify-between mb-4 px-2 z-20">
+      <div className="w-full max-w-md flex items-center justify-between mb-4 px-2 z-20">
         <div className="flex items-center gap-2">
           {onSyncFromExcel && (
             <button
@@ -208,239 +217,279 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         </div>
       </div>
 
-      <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 items-start">
-        {/* LEFT / CENTER: Keypad & Direct PIN Login */}
-        <div className="lg:col-span-5 flex flex-col items-center bg-slate-900/90 border border-slate-800/90 rounded-3xl p-6 shadow-2xl backdrop-blur-md">
-          {/* Brand Header */}
-          <div className="flex flex-col items-center mb-4 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 p-0.5 shadow-xl shadow-blue-500/20 mb-2 flex items-center justify-center">
-              <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center">
-                <Wrench className="w-7 h-7 text-cyan-400" />
-              </div>
+      {/* CENTERED: Clean Keypad & Direct PIN Login (Registered technicians hidden at startup) */}
+      <div className="w-full max-w-md mx-auto flex flex-col items-center bg-slate-900/90 border border-slate-800/90 rounded-3xl p-6 sm:p-7 shadow-2xl backdrop-blur-md relative z-10">
+        {/* Brand Header */}
+        <div className="flex flex-col items-center mb-4 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 p-0.5 shadow-xl shadow-blue-500/20 mb-2 flex items-center justify-center">
+            <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center">
+              <Wrench className="w-7 h-7 text-cyan-400" />
             </div>
-            <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
-              AKG BAKIM SİSTEMİ
-            </h1>
-            <p className="text-xs text-slate-400 font-medium">
-              Saha Arıza & Operatör Giriş Paneli
-            </p>
           </div>
-
-          {/* Matched Operator Preview Card */}
-          <div className="w-full mb-4 h-16 flex items-center justify-center">
-            {matchedOp ? (
-              <button
-                type="button"
-                onClick={() => submitPin(pin)}
-                className="w-full flex items-center justify-between bg-cyan-950/40 border border-cyan-500/60 hover:bg-cyan-900/50 p-2.5 rounded-2xl shadow-lg transition-all group"
-                title="Giriş yapmak için tıklayın"
-              >
-                <div className="flex items-center gap-3">
-                  <img
-                    src={matchedOp.photo}
-                    alt={matchedOp.name}
-                    onError={(e) => {
-                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        matchedOp.name
-                      )}&background=0284c7&color=fff&bold=true`;
-                    }}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-cyan-400 shadow-md"
-                  />
-                  <div className="text-left">
-                    <div className="text-sm font-bold text-white leading-tight flex items-center gap-1.5">
-                      {matchedOp.name}
-                      {matchedOp.role === 'admin' && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
-                          Admin
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-cyan-400 font-semibold flex items-center gap-1">
-                      <span>PIN: {matchedOp.pin}</span>
-                      <span className="text-slate-400 font-normal">• {matchedOp.shortName}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="px-2.5 py-1 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-sm group-hover:scale-105 transition-transform">
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Giriş</span>
-                </div>
-              </button>
-            ) : (
-              <div className="text-xs text-slate-400 flex items-center gap-2 bg-slate-950/60 px-4 py-2.5 rounded-2xl border border-slate-800">
-                <KeyRound className="w-4 h-4 text-cyan-400" />
-                <span>PIN Kodunuzu Tuşlayınız veya Listeden Seçiniz</span>
-              </div>
-            )}
-          </div>
-
-          {/* PIN Indicators / Entered Code Display */}
-          <div className="flex flex-col items-center mb-4">
-            <div className="flex items-center justify-center gap-3 mb-1">
-              {[0, 1, 2, 3].map((idx) => {
-                const hasValue = pin.length > idx;
-                return (
-                  <div
-                    key={idx}
-                    className={`w-4 h-4 rounded-full transition-all duration-200 ${
-                      error
-                        ? 'bg-rose-500 scale-110 shadow-lg shadow-rose-500/50'
-                        : hasValue
-                        ? 'bg-cyan-400 scale-125 shadow-lg shadow-cyan-400/50'
-                        : 'bg-slate-800 border border-slate-700'
-                    }`}
-                  />
-                );
-              })}
-            </div>
-            {pin.length > 0 && (
-              <span className="text-xs font-mono font-bold text-cyan-400 tracking-widest mt-1">
-                Girilen: {pin}
-              </span>
-            )}
-          </div>
-
-          {/* Numeric Keypad */}
-          <div className="grid grid-cols-3 gap-2.5 w-full max-w-[260px] mb-4">
-            {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
-              <button
-                key={num}
-                onClick={() => handleDigit(num)}
-                disabled={loading}
-                className="h-12 rounded-2xl bg-slate-950 border border-slate-800 hover:border-cyan-500 hover:bg-slate-900 active:scale-95 text-lg font-bold text-white transition-all shadow-md flex items-center justify-center select-none"
-              >
-                {num}
-              </button>
-            ))}
-            <button
-              onClick={handleClear}
-              disabled={loading || pin.length === 0}
-              className="h-12 rounded-2xl bg-slate-950/60 border border-slate-800 hover:bg-slate-800 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all flex items-center justify-center select-none"
-            >
-              Temizle
-            </button>
-            <button
-              onClick={() => handleDigit('0')}
-              disabled={loading}
-              className="h-12 rounded-2xl bg-slate-950 border border-slate-800 hover:border-cyan-500 hover:bg-slate-900 active:scale-95 text-lg font-bold text-white transition-all shadow-md flex items-center justify-center select-none"
-            >
-              0
-            </button>
-            <button
-              onClick={handleDelete}
-              disabled={loading || pin.length === 0}
-              className="h-12 rounded-2xl bg-slate-950/60 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition-all flex items-center justify-center select-none"
-            >
-              <Delete className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Explicit "GİRİŞ YAP" Button */}
-          <button
-            onClick={() => submitPin(pin)}
-            disabled={loading || pin.length === 0}
-            className={`w-full max-w-[260px] h-12 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
-              pin.length > 0
-                ? 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-cyan-500/25 active:scale-98'
-                : 'bg-slate-800/60 text-slate-500 border border-slate-800 cursor-not-allowed'
-            }`}
-          >
-            <LogIn className="w-4 h-4" />
-            <span>{loading ? 'Giriş Yapılıyor...' : 'GİRİŞ YAP'}</span>
-          </button>
+          <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
+            AKG BAKIM SİSTEMİ
+          </h1>
+          <p className="text-xs text-slate-400 font-medium">
+            Saha Arıza & Operatör Giriş Paneli
+          </p>
         </div>
 
-        {/* RIGHT: All Active Technicians & 1-Tap Quick Login */}
-        <div className="lg:col-span-7 flex flex-col bg-slate-900/90 border border-slate-800/90 rounded-3xl p-5 shadow-2xl backdrop-blur-md">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <User className="w-4 h-4 text-cyan-400" />
-                <span>Kayıtlı Bakım Teknisyenleri</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-800 text-cyan-300 font-mono font-bold">
-                  {operators.length} Kişi
-                </span>
-              </h2>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Google E-Tablo ile senkronize gerçek operatör listesi
-              </p>
+        {/* Matched Operator Preview Card */}
+        <div className="w-full mb-4 h-16 flex items-center justify-center">
+          {matchedOp ? (
+            <button
+              type="button"
+              onClick={() => submitPin(pin)}
+              className="w-full flex items-center justify-between bg-cyan-950/40 border border-cyan-500/60 hover:bg-cyan-900/50 p-2.5 rounded-2xl shadow-lg transition-all group"
+              title="Giriş yapmak için tıklayın"
+            >
+              <div className="flex items-center gap-3">
+                <img
+                  src={matchedOp.photo}
+                  alt={matchedOp.name}
+                  onError={(e) => {
+                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      matchedOp.name
+                    )}&background=0284c7&color=fff&bold=true`;
+                  }}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-cyan-400 shadow-md"
+                />
+                <div className="text-left">
+                  <div className="text-sm font-bold text-white leading-tight flex items-center gap-1.5">
+                    {matchedOp.name}
+                    {matchedOp.role === 'admin' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
+                        Admin
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-cyan-400 font-semibold flex items-center gap-1">
+                    <span>PIN: {matchedOp.pin}</span>
+                    <span className="text-slate-400 font-normal">• {matchedOp.shortName}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="px-2.5 py-1 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-sm group-hover:scale-105 transition-transform">
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Giriş</span>
+              </div>
+            </button>
+          ) : (
+            <div className="text-xs text-slate-400 flex items-center gap-2 bg-slate-950/60 px-4 py-2.5 rounded-2xl border border-slate-800">
+              <KeyRound className="w-4 h-4 text-cyan-400" />
+              <span>PIN Kodunuzu Tuşlayınız</span>
             </div>
+          )}
+        </div>
 
-            {/* Quick Search */}
-            <div className="relative w-40 sm:w-48">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Teknisyen Ara..."
-                className="w-full pl-8 pr-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-              />
-            </div>
-          </div>
-
-          {/* Grid of Technicians */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[440px] overflow-y-auto pr-1">
-            {filteredOperators.map((op) => {
-              const isSelected = matchedOp?.id === op.id || pin === op.pin;
+        {/* PIN Indicators / Entered Code Display */}
+        <div className="flex flex-col items-center mb-4">
+          <div className="flex items-center justify-center gap-3 mb-1">
+            {[0, 1, 2, 3].map((idx) => {
+              const hasValue = pin.length > idx;
               return (
-                <button
-                  key={op.id || op.pin}
-                  onClick={() => handleQuickSelect(op)}
-                  className={`flex items-center justify-between p-2.5 rounded-2xl border text-left transition-all group ${
-                    isSelected
-                      ? 'bg-cyan-950/70 border-cyan-400 shadow-md shadow-cyan-950'
-                      : 'bg-slate-950/80 border-slate-800/90 hover:border-cyan-500/60 hover:bg-slate-900'
+                <div
+                  key={idx}
+                  className={`w-4 h-4 rounded-full transition-all duration-200 ${
+                    error
+                      ? 'bg-rose-500 scale-110 shadow-lg shadow-rose-500/50'
+                      : hasValue
+                      ? 'bg-cyan-400 scale-125 shadow-lg shadow-cyan-400/50'
+                      : 'bg-slate-800 border border-slate-700'
                   }`}
-                >
-                  <div className="flex items-center gap-2.5 overflow-hidden">
-                    <img
-                      src={op.photo}
-                      alt={op.name}
-                      onError={(e) => {
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          op.name
-                        )}&background=0284c7&color=fff&bold=true`;
-                      }}
-                      className="w-10 h-10 rounded-xl object-cover border border-slate-700 group-hover:border-cyan-400 flex-shrink-0"
-                    />
-                    <div className="overflow-hidden">
-                      <div className="text-xs font-bold text-white truncate group-hover:text-cyan-300 transition-colors">
-                        {op.name}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                        <span className="font-mono bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 text-cyan-400 font-bold">
-                          PIN: {op.pin}
-                        </span>
-                        {op.role === 'admin' ? (
-                          <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-semibold flex items-center gap-0.5">
-                            <ShieldCheck className="w-2.5 h-2.5" /> Admin
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">Teknisyen</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 group-hover:bg-cyan-500 group-hover:text-slate-950 group-hover:border-cyan-400 text-slate-400 transition-all flex-shrink-0 ml-2">
-                    <LogIn className="w-3.5 h-3.5" />
-                  </div>
-                </button>
+                />
               );
             })}
           </div>
-
-          {/* Footer Info */}
-          <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              <span>PIN kodunuzla veya isminize tıklayarak doğrudan giriş yapabilirsiniz.</span>
+          {pin.length > 0 && (
+            <span className="text-xs font-mono font-bold text-cyan-400 tracking-widest mt-1">
+              Girilen: {pin}
             </span>
-            <span className="font-mono text-slate-500">v3.5 - Google Sheets Entegre</span>
-          </div>
+          )}
+        </div>
+
+        {/* Numeric Keypad */}
+        <div className="grid grid-cols-3 gap-2.5 w-full max-w-[280px] mb-4">
+          {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
+            <button
+              key={num}
+              onClick={() => handleDigit(num)}
+              disabled={loading}
+              className="h-12 rounded-2xl bg-slate-950 border border-slate-800 hover:border-cyan-500 hover:bg-slate-900 active:scale-95 text-lg font-bold text-white transition-all shadow-md flex items-center justify-center select-none"
+            >
+              {num}
+            </button>
+          ))}
+          <button
+            onClick={handleClear}
+            disabled={loading || pin.length === 0}
+            className="h-12 rounded-2xl bg-slate-950/60 border border-slate-800 hover:bg-slate-800 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all flex items-center justify-center select-none"
+          >
+            Temizle
+          </button>
+          <button
+            onClick={() => handleDigit('0')}
+            disabled={loading}
+            className="h-12 rounded-2xl bg-slate-950 border border-slate-800 hover:border-cyan-500 hover:bg-slate-900 active:scale-95 text-lg font-bold text-white transition-all shadow-md flex items-center justify-center select-none"
+          >
+            0
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={loading || pin.length === 0}
+            className="h-12 rounded-2xl bg-slate-950/60 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition-all flex items-center justify-center select-none"
+          >
+            <Delete className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Explicit "GİRİŞ YAP" Button */}
+        <button
+          onClick={() => submitPin(pin)}
+          disabled={loading || pin.length === 0}
+          className={`w-full max-w-[280px] h-12 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
+            pin.length > 0
+              ? 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-cyan-500/25 active:scale-98'
+              : 'bg-slate-800/60 text-slate-500 border border-slate-800 cursor-not-allowed'
+          }`}
+        >
+          <LogIn className="w-4 h-4" />
+          <span>{loading ? 'Giriş Yapılıyor...' : 'GİRİŞ YAP'}</span>
+        </button>
+
+        {/* Discreet Technician List Link (only opens on user demand) */}
+        <div className="mt-4 pt-3 border-t border-slate-800/80 w-full flex items-center justify-between text-xs text-slate-500">
+          <button
+            type="button"
+            onClick={() => setShowTechniciansModal(true)}
+            className="text-[11px] text-slate-400 hover:text-cyan-400 flex items-center gap-1.5 transition-colors py-1 px-2 rounded-lg hover:bg-slate-800/50"
+            title="Kayıtlı teknisyen listesini aç"
+          >
+            <Users className="w-3.5 h-3.5 text-cyan-500" />
+            <span>Teknisyen Listesi ({operators.length})</span>
+            <ChevronRight className="w-3 h-3 text-slate-500" />
+          </button>
+          <span className="text-[10px] font-mono text-slate-500">v3.5 PWA</span>
         </div>
       </div>
+
+      {/* POPUP MODAL: Registered Technicians (Only shown if user clicks the button, never on startup) */}
+      {showTechniciansModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-cyan-950 border border-cyan-800 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-cyan-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>Kayıtlı Bakım Teknisyenleri</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-800 text-cyan-300 font-mono font-bold">
+                      {operators.length} Kişi
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Giriş yapmak istediğiniz teknisyeni seçebilirsiniz
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowTechniciansModal(false)}
+                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Quick Search */}
+            <div className="py-3">
+              <div className="relative w-full">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="İsim, rol veya PIN ara..."
+                  autoFocus
+                  className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+            </div>
+
+            {/* Grid of Technicians */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto pr-1 flex-1 max-h-[50vh]">
+              {filteredOperators.map((op) => {
+                const isSelected = matchedOp?.id === op.id || pin === op.pin;
+                return (
+                  <button
+                    key={op.id || op.pin}
+                    onClick={() => handleQuickSelect(op)}
+                    className={`flex items-center justify-between p-2.5 rounded-2xl border text-left transition-all group ${
+                      isSelected
+                        ? 'bg-cyan-950/70 border-cyan-400 shadow-md shadow-cyan-950'
+                        : 'bg-slate-950/80 border-slate-800/90 hover:border-cyan-500/60 hover:bg-slate-800/60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 overflow-hidden">
+                      <img
+                        src={op.photo}
+                        alt={op.name}
+                        onError={(e) => {
+                          e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                            op.name
+                          )}&background=0284c7&color=fff&bold=true`;
+                        }}
+                        className="w-10 h-10 rounded-xl object-cover border border-slate-700 group-hover:border-cyan-400 flex-shrink-0"
+                      />
+                      <div className="overflow-hidden">
+                        <div className="text-xs font-bold text-white truncate group-hover:text-cyan-300 transition-colors">
+                          {op.name}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                          <span className="font-mono bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 text-cyan-400 font-bold">
+                            PIN: {op.pin}
+                          </span>
+                          {op.role === 'admin' ? (
+                            <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-semibold flex items-center gap-0.5">
+                              <ShieldCheck className="w-2.5 h-2.5" /> Admin
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">Teknisyen</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 group-hover:bg-cyan-500 group-hover:text-slate-950 group-hover:border-cyan-400 text-slate-400 transition-all flex-shrink-0 ml-2">
+                      <LogIn className="w-3.5 h-3.5" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Teknisyene tıklayarak doğrudan giriş yapabilirsiniz.</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowTechniciansModal(false)}
+                className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

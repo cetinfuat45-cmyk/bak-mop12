@@ -91,41 +91,41 @@ export function formatJobType(val?: string | null): string {
 // OPERATOR PARÇA BEKLİYOR ( 1 dk )
 // OPERATOR ARIZAYI KAPATTI ( 14 dk )
 // OPERATOR YARDIMCI OLDU ( 8 dk )
+// OPERATOR VARDİYAYA DEVRETTİ ( 15 dk )
+// OPERATOR ARIZADAN ÇIKTI ( 10 dk )
 export function formatMaintenanceLog(f: Fault): string {
   const lines: string[] = [];
-  const closedOp = (f.closedBy || f.assignedTo || 'TEKNİSYEN').toUpperCase();
+  const closedOp = (f.closedBy || f.assignedTo || 'TEKNİSYEN').toLocaleUpperCase('tr-TR');
   const totalMins = f.totalDowntimeMinutes || 1;
 
   if (Array.isArray(f.interventions) && f.interventions.length > 0) {
     let hasClosing = false;
     for (const inv of f.interventions) {
-      const op = (inv.operator || closedOp).toUpperCase();
+      const op = (inv.operator || closedOp).toLocaleUpperCase('tr-TR');
       const mins = Number(inv.minutes) || 1;
-      let rawAct = (inv.action || '').trim().toUpperCase();
+      const rawAct = (inv.action || '').trim().toLocaleUpperCase('tr-TR');
 
-      // Clean duplicate operator name or duration if embedded in raw action
-      let cleanAct = rawAct;
-      if (cleanAct.startsWith(op)) {
-        cleanAct = cleanAct.substring(op.length).trim();
-      }
-      cleanAct = cleanAct.replace(/\(\s*\d+\s*DK\s*\)/gi, '').trim();
-
-      if (!cleanAct) {
-        cleanAct = inv.role === 'helper' ? 'YARDIMCI OLDU' : 'MÜDAHALE ETTİ';
-      }
-
-      if (inv.role === 'primary' && (cleanAct.includes('KAPATTI') || !hasClosing)) {
+      let cleanAct = 'MÜDAHALE ETTİ';
+      if (rawAct.includes('VARDİYAYA DEVİR') || rawAct.includes('VARDİYAYA DEVRETTİ') || rawAct.includes('DEVREDİLDİ')) {
+        cleanAct = 'VARDİYAYA DEVRETTİ';
+      } else if (rawAct.includes('PARÇA BEKLİYOR')) {
+        cleanAct = 'PARÇA BEKLİYOR';
+      } else if (rawAct.includes('DIŞ SERVİS')) {
+        cleanAct = 'DIŞ SERVİS BEKLİYOR';
+      } else if (rawAct.includes('GEÇİCİ ÇÖZÜM')) {
+        cleanAct = 'GEÇİCİ ÇÖZÜM';
+      } else if (rawAct.includes('ARIZADAN ÇIKTI') || rawAct.includes('ARIZADAN AYRILDI')) {
+        cleanAct = 'ARIZADAN ÇIKTI';
+      } else if (inv.role === 'helper' || rawAct.includes('YARDIMCI')) {
+        cleanAct = 'YARDIMCI OLDU';
+      } else if (rawAct.includes('KAPATTI') || (inv.role === 'primary' && f.status === 'Kapalı' && !hasClosing)) {
         cleanAct = 'ARIZAYI KAPATTI';
         hasClosing = true;
-      } else if (inv.role === 'helper') {
-        if (!cleanAct.includes('YARDIMCI')) {
-          cleanAct = 'YARDIMCI OLDU';
-        }
       }
 
       lines.push(`${op} ${cleanAct} ( ${mins} dk )`);
     }
-    if (!hasClosing) {
+    if (!hasClosing && f.status === 'Kapalı') {
       lines.push(`${closedOp} ARIZAYI KAPATTI ( ${totalMins} dk )`);
     }
   } else {
@@ -738,38 +738,116 @@ export const cmmsService = {
     const initial = getLocal<SystemMessage[]>(LS_KEY_MESSAGES, DEFAULT_MESSAGES);
     callback(initial);
 
-    let unsubscribeFirestore: (() => void) | null = null;
+    let unsubMessages: (() => void) | null = null;
+    let unsubMesajlar: (() => void) | null = null;
+
     if (firestoreDb && isFirebaseOnline) {
       try {
-        unsubscribeFirestore = firestoreDb
+        const parseMsgDoc = (d: firebase.firestore.DocumentSnapshot): SystemMessage => {
+          const data = d.data() || {};
+          let ts = Date.now();
+
+          const extractTime = (val: any): number | null => {
+            if (!val) return null;
+            if (typeof val.toMillis === 'function') return val.toMillis();
+            if (typeof val.toDate === 'function') return val.toDate().getTime();
+            if (typeof val.seconds === 'number') return val.seconds * 1000;
+            if (typeof val === 'number') return val;
+            if (typeof val === 'string') {
+              const parsed = new Date(val).getTime();
+              if (!isNaN(parsed)) return parsed;
+            }
+            return null;
+          };
+
+          const parsedTs =
+            extractTime(data.createdAt) ||
+            extractTime(data.timestamp) ||
+            extractTime(data.timestampMs) ||
+            extractTime(data.date);
+          if (parsedTs) ts = parsedTs;
+
+          const sender = data.sender || 'Teknisyen';
+          const targetUsers = Array.isArray(data.targetUsers) ? data.targetUsers : undefined;
+          let target = data.target || (targetUsers && targetUsers.length > 0 ? targetUsers.join(', ') : 'ALL');
+
+          const isFieldNotification =
+            sender.toLowerCase().includes('saha') ||
+            (data.type && String(data.type).toLowerCase().includes('saha')) ||
+            (data.source && String(data.source).toLowerCase().includes('saha')) ||
+            (data.isFieldNotification === true);
+
+          return {
+            id: d.id,
+            sender,
+            target,
+            targetUsers,
+            text: data.text || data.message || '',
+            timestamp: ts,
+            readBy: Array.isArray(data.readBy) ? data.readBy : [],
+            isFieldNotification
+          };
+        };
+
+        const docsMap = new Map<string, SystemMessage>();
+
+        const syncCombinedDocs = () => {
+          const combined = Array.from(docsMap.values());
+          combined.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+          if (combined.length > 0) {
+            notifyMessages(combined);
+          }
+        };
+
+        // 1. Listen to 'messages' collection (without orderBy to avoid skipping docs missing timestamp field)
+        unsubMessages = firestoreDb
           .collection('messages')
-          .orderBy('timestamp', 'desc')
-          .limit(30)
+          .limit(50)
           .onSnapshot(
             (snapshot) => {
-              if (!snapshot.empty) {
-                const list: SystemMessage[] = snapshot.docs.map((d) => ({
-                  id: d.id,
-                  sender: d.data().sender || 'Sistem',
-                  target: d.data().target || 'ALL',
-                  text: d.data().text || '',
-                  timestamp: d.data().timestamp || Date.now(),
-                  readBy: d.data().readBy || []
-                }));
-                notifyMessages(list);
+              if (snapshot) {
+                snapshot.docs.forEach((doc) => {
+                  docsMap.set(doc.id, parseMsgDoc(doc));
+                });
+                syncCombinedDocs();
               }
             },
-            () => {}
+            (err) => {
+              console.warn('Firestore messages subscription error', err);
+            }
           );
+
+        // 2. Also listen to 'mesajlar' collection if present in Firebase
+        try {
+          unsubMesajlar = firestoreDb
+            .collection('mesajlar')
+            .limit(50)
+            .onSnapshot(
+              (snapshot) => {
+                if (snapshot && !snapshot.empty) {
+                  snapshot.docs.forEach((doc) => {
+                    docsMap.set(doc.id, parseMsgDoc(doc));
+                  });
+                  syncCombinedDocs();
+                }
+              },
+              () => {
+                // Ignore if 'mesajlar' doesn't exist
+              }
+            );
+        } catch {
+          // Ignore
+        }
       } catch (e) {
-        // Fallback to local
+        console.warn('Firestore message subscribe error fallback to local', e);
       }
     }
 
     return () => {
       const idx = messageListeners.indexOf(callback);
       if (idx !== -1) messageListeners.splice(idx, 1);
-      if (unsubscribeFirestore) unsubscribeFirestore();
+      if (unsubMessages) unsubMessages();
+      if (unsubMesajlar) unsubMesajlar();
     };
   },
 
@@ -830,6 +908,17 @@ export const cmmsService = {
         console.warn('Firestore update error', e);
       }
     }
+
+    // 📢 OTO SİSTEM HAREKETİ BİLDİRİM MESAJI
+    try {
+      await this.sendMessage(
+        operatorName,
+        'ALL',
+        `🔧 ${operatorName}, ${target.machine} makinesinde arıza müdahalesine başladı.`
+      );
+    } catch (e) {
+      console.warn('Auto message error', e);
+    }
   },
 
   // Join as Helper (Yardımcı Olarak Katıl)
@@ -838,31 +927,51 @@ export const cmmsService = {
     const target = faults.find((f) => f.id === faultId);
     if (!target) return;
 
+    const cleanName = helperName.trim();
     if (!target.helpers) target.helpers = [];
-    if (!target.helpers.includes(helperName)) {
-      target.helpers.push(helperName);
+    
+    // Check if already in helpers (case-insensitive)
+    const exists = target.helpers.some(
+      (h) => h.trim().toLocaleUpperCase('tr-TR') === cleanName.toLocaleUpperCase('tr-TR')
+    );
+    if (!exists) {
+      target.helpers.push(cleanName);
     }
+
     if (!target.helperJoinedAt) target.helperJoinedAt = {};
-    if (!target.helperJoinedAt[helperName]) {
-      target.helperJoinedAt[helperName] = new Date().toISOString();
+    if (!target.helperJoinedAt[cleanName]) {
+      target.helperJoinedAt[cleanName] = new Date().toISOString();
     }
 
     notifyFaults(faults);
 
     if (firestoreDb && isFirebaseOnline) {
       try {
-        const updateData: Record<string, unknown> = {
-          helpers: firebase.firestore.FieldValue.arrayUnion(helperName)
-        };
-        updateData[`helperJoinedAt.${helperName}`] = target.helperJoinedAt[helperName];
-        await firestoreDb.collection('arizalar').doc(faultId).update(updateData);
+        await firestoreDb.collection('arizalar').doc(faultId).set(
+          {
+            helpers: target.helpers,
+            helperJoinedAt: target.helperJoinedAt
+          },
+          { merge: true }
+        );
       } catch (e) {
         console.warn('Firestore join helper error', e);
       }
     }
+
+    // 📢 OTO SİSTEM HAREKETİ BİLDİRİM MESAJI
+    try {
+      await this.sendMessage(
+        cleanName,
+        'ALL',
+        `🤝 ${cleanName}, ${target.machine} arızasına yardımcı teknisyen olarak katıldı.`
+      );
+    } catch (e) {
+      console.warn('Auto message error', e);
+    }
   },
 
-  // Leave Helper (Bakımdan Ayrıl)
+  // Leave Helper (Bakımdan Ayrıl - Süreyi Otomatik Hesapla & Loga Ekle)
   async leaveHelper(
     faultId: string,
     helperName: string,
@@ -872,82 +981,209 @@ export const cmmsService = {
     const target = faults.find((f) => f.id === faultId);
     if (!target) return;
 
+    const cleanName = helperName.trim();
+    const upperCleanName = cleanName.toLocaleUpperCase('tr-TR');
+    const actualMinutes = Math.max(1, Number(minutesWorked) || 1);
+
+    // 1. Remove from active helpers (case-insensitive)
     if (target.helpers) {
-      target.helpers = target.helpers.filter((h) => h !== helperName);
+      target.helpers = target.helpers.filter(
+        (h) => h.trim().toLocaleUpperCase('tr-TR') !== upperCleanName
+      );
     }
-    if (target.helperJoinedAt && target.helperJoinedAt[helperName]) {
-      delete target.helperJoinedAt[helperName];
-    }
-    if (!target.interventions) target.interventions = [];
-    target.interventions.push({
-      operator: helperName,
-      minutes: minutesWorked,
-      role: 'helper',
-      action: 'YARDIMCI OLDU'
-    });
 
-    notifyFaults(faults);
-
-    // Also update weekly stats for helper
-    this.addMinutesToWeeklyStats(helperName, minutesWorked);
-
-    if (firestoreDb && isFirebaseOnline) {
-      try {
-        const updateData: Record<string, unknown> = {
-          helpers: firebase.firestore.FieldValue.arrayRemove(helperName),
-          interventions: firebase.firestore.FieldValue.arrayUnion({
-            operator: helperName,
-            minutes: minutesWorked,
-            role: 'helper',
-            action: 'YARDIMCI OLDU'
-          })
-        };
-        updateData[`helperJoinedAt.${helperName}`] = firebase.firestore.FieldValue.delete();
-        await firestoreDb.collection('arizalar').doc(faultId).update(updateData);
-      } catch (e) {
-        console.warn('Firestore leave helper error', e);
+    // 2. Remove from helperJoinedAt (case-insensitive)
+    if (target.helperJoinedAt) {
+      for (const k of Object.keys(target.helperJoinedAt)) {
+        if (k.trim().toLocaleUpperCase('tr-TR') === upperCleanName) {
+          delete target.helperJoinedAt[k];
+        }
       }
     }
-  },
 
-  // Update Status without closing (Parça Bekliyor, Devredildi, etc.)
-  async updateFaultStatus(
-    faultId: string,
-    status: Fault['status'],
-    note?: string
-  ): Promise<void> {
-    const faults = getLocal<Fault[]>(LS_KEY_FAULTS, DEFAULT_FAULTS);
-    const target = faults.find((f) => f.id === faultId);
-    if (!target) return;
+    // 3. Add to interventions log (Yardımcı Oldu kaydı)
+    if (!target.interventions) target.interventions = [];
+    
+    // Check if there's already an intervention entry for this helper; if so, accumulate or append
+    const existingIdx = target.interventions.findIndex(
+      (inv) =>
+        inv.role === 'helper' &&
+        (inv.operator || '').trim().toLocaleUpperCase('tr-TR') === upperCleanName
+    );
 
-    target.status = status;
-    // When waiting for parts or handover, clear active assignment so next shift can take it
-    if (
-      status === 'Parça Bekliyor' ||
-      status === 'Devredildi' ||
-      status === 'Dış Servis Bekliyor'
-    ) {
-      target.assignedTo = null;
-      target.startedAt = null;
-    }
-    if (note && note.trim()) {
-      if (!target.interventions) target.interventions = [];
+    if (existingIdx !== -1) {
+      // Update existing record
+      target.interventions[existingIdx].minutes =
+        (Number(target.interventions[existingIdx].minutes) || 0) + actualMinutes;
+      target.interventions[existingIdx].action = 'YARDIMCI OLDU';
+    } else {
       target.interventions.push({
-        operator: target.assignedTo || 'Sistem',
-        minutes: 0,
-        action: `Durum Değişikliği [${status}]: ${note}`
+        operator: cleanName,
+        minutes: actualMinutes,
+        role: 'helper',
+        action: 'YARDIMCI OLDU'
       });
     }
 
     notifyFaults(faults);
 
+    // 4. Update weekly and today's stats for helper
+    this.addMinutesToWeeklyStats(cleanName, actualMinutes);
+
+    // 5. Update Firestore reliably
     if (firestoreDb && isFirebaseOnline) {
       try {
-        const updateData: Record<string, unknown> = { status };
+        await firestoreDb.collection('arizalar').doc(faultId).set(
+          {
+            helpers: target.helpers,
+            helperJoinedAt: target.helperJoinedAt || {},
+            interventions: target.interventions
+          },
+          { merge: true }
+        );
+      } catch (e) {
+        console.warn('Firestore leave helper error', e);
+      }
+    }
+
+    // 📢 OTO SİSTEM HAREKETİ BİLDİRİM MESAJI
+    try {
+      await this.sendMessage(
+        cleanName,
+        'ALL',
+        `👋 ${cleanName}, ${target.machine} arızasındaki yardımını tamamladı (${actualMinutes} dk).`
+      );
+    } catch (e) {
+      console.warn('Auto message error', e);
+    }
+  },
+
+  // Update Status without closing (Parça Bekliyor, Devredildi, Arızadan Çıkma, etc.)
+  async updateFaultStatus(
+    faultId: string,
+    status: Fault['status'],
+    note?: string,
+    operatorName?: string,
+    minutes?: number
+  ): Promise<void> {
+    const faults = getLocal<Fault[]>(LS_KEY_FAULTS, DEFAULT_FAULTS);
+    const target = faults.find((f) => f.id === faultId);
+    if (!target) return;
+
+    const op = operatorName || target.assignedTo || 'Teknisyen';
+
+    // Calculate actual elapsed minutes for this intervention session
+    let actualMinutes = Number(minutes) || 0;
+    if (actualMinutes <= 0) {
+      if (target.startedAt) {
+        const startMs = new Date(target.startedAt).getTime();
+        if (!isNaN(startMs)) {
+          actualMinutes = Math.max(1, Math.round((Date.now() - startMs) / 60000));
+        } else {
+          actualMinutes = 1;
+        }
+      } else {
+        actualMinutes = 1;
+      }
+    }
+
+    target.status = status;
+
+    // Determine readable action title for logs and Google Sheets Column I
+    let actionType = '';
+    const cleanNote = (note || '').trim();
+    if (status === 'Devredildi') {
+      actionType = 'VARDİYAYA DEVRETTİ';
+    } else if (status === 'Parça Bekliyor') {
+      actionType = 'PARÇA BEKLİYOR';
+    } else if (status === 'Dış Servis Bekliyor') {
+      actionType = 'DIŞ SERVİS BEKLİYOR';
+    } else if (status === 'Geçici Çözüm') {
+      actionType = 'GEÇİCİ ÇÖZÜM UYGULANDI';
+    } else if (status === 'Açık') {
+      actionType = 'ARIZADAN ÇIKTI';
+    } else {
+      actionType = `DURUM [${status}]`;
+    }
+
+    const fullActionText = cleanNote ? `${actionType}: ${cleanNote}` : actionType;
+
+    // Add intervention log entry
+    if (!target.interventions) target.interventions = [];
+    target.interventions.push({
+      operator: op,
+      minutes: actualMinutes,
+      role: 'primary',
+      action: fullActionText,
+      endedAt: new Date().toISOString()
+    });
+
+    // Credit minutes to operator's weekly stats and add to total downtime
+    this.addMinutesToWeeklyStats(op, actualMinutes);
+    target.totalDowntimeMinutes = (target.totalDowntimeMinutes || 0) + actualMinutes;
+
+    // Handle any active helpers assisting on this fault
+    if (Array.isArray(target.helpers) && target.helpers.length > 0) {
+      for (const h of target.helpers) {
+        const hName = h.trim();
+        const upperHName = hName.toLocaleUpperCase('tr-TR');
+        if (!hName) continue;
+
+        let helperMins = actualMinutes;
+        if (target.helperJoinedAt) {
+          const matchKey = Object.keys(target.helperJoinedAt).find(
+            (k) => k.trim().toLocaleUpperCase('tr-TR') === upperHName
+          );
+          if (matchKey && target.helperJoinedAt[matchKey]) {
+            const joinedMs = new Date(target.helperJoinedAt[matchKey]).getTime();
+            if (!isNaN(joinedMs)) {
+              helperMins = Math.max(1, Math.min(actualMinutes, Math.round((Date.now() - joinedMs) / 60000)));
+            }
+          }
+        }
+
+        target.interventions.push({
+          operator: hName,
+          minutes: helperMins,
+          role: 'helper',
+          action: 'YARDIMCI OLDU',
+          endedAt: new Date().toISOString()
+        });
+        this.addMinutesToWeeklyStats(hName, helperMins);
+      }
+      target.helpers = [];
+      target.helperJoinedAt = {};
+    }
+
+    // When waiting for parts, handover, external service, or leaving, clear active assignment
+    if (
+      status === 'Parça Bekliyor' ||
+      status === 'Devredildi' ||
+      status === 'Dış Servis Bekliyor' ||
+      status === 'Geçici Çözüm' ||
+      status === 'Açık'
+    ) {
+      target.assignedTo = null;
+      target.startedAt = null;
+    }
+
+    notifyFaults(faults);
+
+    if (firestoreDb && isFirebaseOnline) {
+      try {
+        const updateData: Record<string, unknown> = {
+          status,
+          interventions: target.interventions,
+          totalDowntimeMinutes: target.totalDowntimeMinutes,
+          helpers: [],
+          helperJoinedAt: {}
+        };
         if (
           status === 'Parça Bekliyor' ||
           status === 'Devredildi' ||
-          status === 'Dış Servis Bekliyor'
+          status === 'Dış Servis Bekliyor' ||
+          status === 'Geçici Çözüm' ||
+          status === 'Açık'
         ) {
           updateData.assignedTo = null;
           updateData.startedAt = null;
@@ -956,6 +1192,18 @@ export const cmmsService = {
       } catch (e) {
         console.warn('Firestore update status error', e);
       }
+    }
+
+    // 📢 OTO SİSTEM HAREKETİ BİLDİRİM MESAJI
+    try {
+      const noteStr = cleanNote ? ` (Not: ${cleanNote})` : '';
+      await this.sendMessage(
+        op,
+        'ALL',
+        `⏸️ ${op}, ${target.machine} arızasında [${actionType}] kaydı yaptı (${actualMinutes} dk).${noteStr}`
+      );
+    } catch (e) {
+      console.warn('Auto message error', e);
     }
   },
 
@@ -1013,18 +1261,57 @@ export const cmmsService = {
       action: params.actionTaken
     });
 
+    // 1. Process explicitly provided helper minutes if any
+    const handledHelpers = new Set<string>();
     if (params.helperMinutes) {
       for (const [helper, mins] of Object.entries(params.helperMinutes)) {
+        const hName = helper.trim();
         const numMins = Number(mins) || 0;
         if (numMins > 0) {
           target.interventions.push({
-            operator: helper,
+            operator: hName,
             minutes: numMins,
             role: 'helper',
             action: 'YARDIMCI OLDU'
           });
-          this.addMinutesToWeeklyStats(helper, numMins);
+          this.addMinutesToWeeklyStats(hName, numMins);
+          handledHelpers.add(hName.toLocaleUpperCase('tr-TR'));
         }
+      }
+    }
+
+    // 2. Automatically calculate and record any remaining active helpers in target.helpers
+    if (Array.isArray(target.helpers) && target.helpers.length > 0) {
+      for (const h of target.helpers) {
+        const hName = h.trim();
+        const upperHName = hName.toLocaleUpperCase('tr-TR');
+        if (!hName || handledHelpers.has(upperHName)) continue;
+
+        // Calculate auto minutes from join time
+        let autoMins = Math.max(1, params.minutes);
+        let joinIso: string | undefined = undefined;
+        if (target.helperJoinedAt) {
+          const matchKey = Object.keys(target.helperJoinedAt).find(
+            (k) => k.trim().toLocaleUpperCase('tr-TR') === upperHName
+          );
+          if (matchKey) joinIso = target.helperJoinedAt[matchKey];
+        }
+
+        if (joinIso) {
+          const joinedMs = new Date(joinIso).getTime();
+          if (!isNaN(joinedMs)) {
+            autoMins = Math.max(1, Math.min(params.minutes, Math.round((Date.now() - joinedMs) / 60000)));
+          }
+        }
+
+        target.interventions.push({
+          operator: hName,
+          minutes: autoMins,
+          role: 'helper',
+          action: 'YARDIMCI OLDU'
+        });
+        this.addMinutesToWeeklyStats(hName, autoMins);
+        handledHelpers.add(upperHName);
       }
     }
 
@@ -1064,6 +1351,18 @@ export const cmmsService = {
     const remainingFaults = faults.filter((f) => f.id !== faultId);
     notifyFaults(remainingFaults);
 
+    // 📢 OTO SİSTEM HAREKETİ BİLDİRİM MESAJI
+    try {
+      const actionText = params.actionTaken && params.actionTaken.trim() ? ` (İşlem: ${params.actionTaken.trim()})` : '';
+      await this.sendMessage(
+        params.operatorName,
+        'ALL',
+        `✅ ${params.operatorName}, ${target.machine} arızasını başarıyla tamamladı ve kapattı. [Süre: ${params.minutes} dk]${actionText}`
+      );
+    } catch (e) {
+      console.warn('Auto message error on close', e);
+    }
+
     return {
       success: true,
       sheetsSynced,
@@ -1075,6 +1374,7 @@ export const cmmsService = {
 
   // Helper for adding minutes into weekly stats
   addMinutesToWeeklyStats(operatorName: string, minutes: number) {
+    const rawMins = Math.max(1, Math.round(Number(minutes) || 1));
     const stats = getLocal<WeeklyStats>(LS_KEY_WEEKLY, DEFAULT_WEEKLY_STATS);
     const dayNames = [
       'Pazar',
@@ -1087,8 +1387,36 @@ export const cmmsService = {
     ];
     const todayName = dayNames[new Date().getDay()];
 
-    if (!stats[operatorName]) {
-      stats[operatorName] = {
+    const cleanName = (operatorName || '').trim();
+    if (!cleanName) return;
+    const cleanUpper = cleanName.toLocaleUpperCase('tr-TR');
+
+    // 1. Find matching key in existing stats case-insensitively
+    let targetKey = Object.keys(stats).find(
+      (k) => k.trim().toLocaleUpperCase('tr-TR') === cleanUpper
+    );
+
+    // 2. If not found in existing stats keys, check config operators
+    if (!targetKey) {
+      const cfg = this.getConfig();
+      const matchedOp = cfg.operators.find(
+        (o) =>
+          o.name.trim().toLocaleUpperCase('tr-TR') === cleanUpper ||
+          (o.shortName && o.shortName.trim().toLocaleUpperCase('tr-TR') === cleanUpper)
+      );
+      if (matchedOp) {
+        // Also check if matchedOp.name exists in stats
+        const opNameUpper = matchedOp.name.trim().toLocaleUpperCase('tr-TR');
+        targetKey = Object.keys(stats).find(
+          (k) => k.trim().toLocaleUpperCase('tr-TR') === opNameUpper
+        ) || matchedOp.name;
+      } else {
+        targetKey = cleanName;
+      }
+    }
+
+    if (!stats[targetKey]) {
+      stats[targetKey] = {
         Pazartesi: 0,
         Salı: 0,
         Çarşamba: 0,
@@ -1098,7 +1426,7 @@ export const cmmsService = {
         Pazar: 0
       };
     }
-    stats[operatorName][todayName] = (stats[operatorName][todayName] || 0) + minutes;
+    stats[targetKey][todayName] = (stats[targetKey][todayName] || 0) + rawMins;
     notifyWeekly(stats);
 
     if (firestoreDb && isFirebaseOnline) {
@@ -1135,23 +1463,48 @@ export const cmmsService = {
         console.warn('Firestore reassign error', e);
       }
     }
+
+    // 📢 OTO SİSTEM HAREKETİ BİLDİRİM MESAJI
+    if (op) {
+      try {
+        await this.sendMessage(
+          'YÖNETİCİ',
+          'ALL',
+          `📋 ${target.machine} arızasına görevli olarak ${op} atandı.`
+        );
+      } catch (e) {
+        console.warn('Auto message error on reassign', e);
+      }
+    }
   },
 
   // Messaging: Send message
   async sendMessage(sender: string, target: string, text: string): Promise<void> {
     const messages = getLocal<SystemMessage[]>(LS_KEY_MESSAGES, DEFAULT_MESSAGES);
+    const nowTs = Date.now();
     const newMsg: SystemMessage = {
-      id: 'msg-' + Date.now(),
+      id: 'msg-' + nowTs + '-' + Math.random().toString(36).substring(2, 7),
       sender,
       target,
       text: text.trim(),
-      timestamp: Date.now(),
+      timestamp: nowTs,
       readBy: []
     };
 
+    // 1. Immediately update local state & notify listeners across app
     messages.unshift(newMsg);
+    // Keep max 50 recent messages locally
+    if (messages.length > 50) messages.length = 50;
     notifyMessages(messages);
 
+    // Broadcast across browser tabs
+    try {
+      window.dispatchEvent(new CustomEvent('akg_cmms_new_message', { detail: newMsg }));
+    } catch {
+      // Ignore
+    }
+
+    // 2. Synchronize to Firestore remote database
     if (firestoreDb && isFirebaseOnline) {
       try {
         await firestoreDb.collection('messages').add({
@@ -1159,10 +1512,12 @@ export const cmmsService = {
           target: newMsg.target,
           text: newMsg.text,
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          createdAt: new Date().toISOString(),
+          timestampMs: nowTs,
           readBy: []
         });
       } catch (e) {
-        console.warn('Firestore message send error', e);
+        console.warn('Firestore message send error fallback to local only', e);
       }
     }
   },
@@ -1177,6 +1532,40 @@ export const cmmsService = {
         await firestoreDb.collection('messages').doc(messageId).delete();
       } catch (e) {
         console.warn('Firestore delete message error', e);
+      }
+      try {
+        await firestoreDb.collection('mesajlar').doc(messageId).delete();
+      } catch {
+        // Ignore
+      }
+    }
+  },
+
+  // Admin: Clear all messages from Firestore and local storage
+  async clearAllMessages(): Promise<void> {
+    notifyMessages([]);
+    localStorage.setItem(LS_KEY_MESSAGES, JSON.stringify([]));
+
+    if (firestoreDb && isFirebaseOnline) {
+      try {
+        const snap = await firestoreDb.collection('messages').get();
+        if (!snap.empty) {
+          const batch = firestoreDb.batch();
+          snap.docs.forEach((doc) => batch.delete(doc.ref));
+          await batch.commit();
+        }
+      } catch (e) {
+        console.warn('Firestore clear messages error', e);
+      }
+      try {
+        const snap2 = await firestoreDb.collection('mesajlar').get();
+        if (!snap2.empty) {
+          const batch2 = firestoreDb.batch();
+          snap2.docs.forEach((doc) => batch2.delete(doc.ref));
+          await batch2.commit();
+        }
+      } catch {
+        // Ignore
       }
     }
   },

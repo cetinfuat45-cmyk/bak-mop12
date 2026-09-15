@@ -104,6 +104,34 @@ class SoundEffects {
     }
   }
 
+  // Urgent pulsing alarm for field alerts
+  public playAlarm() {
+    if (!this.enabled) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+
+      const now = this.ctx.currentTime;
+      [800, 1000, 800, 1000].forEach((freq, idx) => {
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+
+        gain.gain.setValueAtTime(0.25, now + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.11);
+
+        osc.connect(gain);
+        gain.connect(this.ctx!.destination);
+
+        osc.start(now + idx * 0.12);
+        osc.stop(now + idx * 0.12 + 0.11);
+      });
+    } catch {
+      // Ignore
+    }
+  }
+
   // Fanfare when a fault is successfully closed
   public playCompleteFanfare() {
     if (!this.enabled) return;

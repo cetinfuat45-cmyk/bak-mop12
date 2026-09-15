@@ -1,34 +1,82 @@
-# AKG Gazbeton CMMS - Saha Bakım & Arıza Takip Sistemi (PWA)
+# AKG Gazbeton CMMS - Saha Bakım & Arıza Takip Sistemi (PWA & Çoklu Platform)
 
-Bu proje, **AKG Gazbeton** fabrikası için geliştirilmiş, **Android** ve **iOS (iPhone/iPad)** cihazlarla %100 tam uyumlu, **Progressive Web App (PWA)** mimarisine sahip gerçek zamanlı Saha Bakım Yönetim Sistemi (CMMS) ve Arıza Takip platformudur.
+Bu proje, **AKG Gazbeton** fabrikası için geliştirilmiş; **Windows**, **Android** ve **iOS (iPhone/iPad)** cihazlarla %100 uyumlu, **Progressive Web App (PWA)** ve **Capacitor** mimarisine sahip gerçek zamanlı Saha Bakım Yönetim Sistemi (CMMS) ve Arıza Takip platformudur.
 
 ---
 
-## 📱 Android & iOS Mobil Kurulum Kılavuzu (Telefona Yükleme)
+## 💻 1. Windows Kurulumu ve Çalıştırma (1-Tıkla Başlatma)
 
-Uygulama, hem **Google Chrome (Android)** hem de **Apple Safari (iOS)** üzerinde herhangi bir uygulama mağazasına ihtiyaç duymadan **yerel bir mobil uygulama (Native App)** gibi ana ekrana yüklenebilir ve tam ekran olarak çalışır.
+Windows bilgisayarınızda (Masaüstü veya Laptop) uygulamayı 2 farklı yöntemle çalıştırabilirsiniz:
 
-### 🍏 iPhone & iPad (iOS Safari) Kurulumu:
+### YÖNTEM A: Çift Tıklayarak Yerel Başlatma (Geliştirici / Saha Bilgisayarı)
+1. İndirilen ZIP dosyasını klasöre çıkartın.
+2. Klasör içindeki **`BASLAT.bat`** (veya `BAŞLAT.bat` / `BASLAT.ps1`) dosyasına **çift tıklayın**.
+3. Sistem otomatik olarak:
+   - Node.js kontrolü yapar,
+   - İlk açılışta gerekli paketleri kurar (`npm install`),
+   - Tarayıcınızda (`http://localhost:3000`) sistemi açar.
+
+### YÖNTEM B: Windows Masaüstü Uygulaması Olarak Kurma (PWA Desktop)
+1. Google Chrome veya Microsoft Edge ile sistem adresini açın (`http://localhost:3000` veya canlı URL).
+2. Adres çubuğunun en sağındaki **"Uygulamayı Yükle"** (monitör veya artı `⊕`) simgesine tıklayın.
+3. **Yükle** butonuna bastığınızda, sistem Windows Başlat menünüze ve Görev Çubuğunuza ayrı bir masaüstü uygulaması olarak eklenir, pencere şeklinde tam ekran çalışır.
+
+---
+
+## 📱 2. Android Mobil Kurulum Kılavuzu
+
+### YÖNTEM A: Doğrudan Telefona Yükleme (PWA - Tavsiye Edilen)
+1. Android telefonunuzda **Google Chrome** tarayıcısını açın ve sistem adresine gidin.
+2. Ekranda otomatik çıkan **"Telefona Yükle"** butonuna dokunun VEYA sağ üstteki **üç nokta (⋮)** menüsünü açın.
+3. **"Uygulamayı Yükle"** veya **"Ana Ekrana Ekle"** seçeneğine dokunun.
+4. Uygulama, cihazınızın uygulama çekmecesine **AKG Bakım** simgesiyle yüklenir; adres çubuğu olmadan tam ekran mobil uygulama olarak çalışır.
+
+### YÖNTEM B: Capacitor ile Android APK Derleme (Google Play / Yerel APK)
+Projede `capacitor.config.json` yapılandırması hazır bulunmaktadır:
+```bash
+# 1. Projeyi derleyin
+npm run build
+
+# 2. Capacitor Android paketlerini yükleyin
+npm install @capacitor/core @capacitor/cli @capacitor/android
+
+# 3. Android platformunu ekleyin ve açın
+npx cap add android
+npx cap copy
+npx cap open android
+```
+*Android Studio açılacaktır; Build -> Generate Signed Bundle / APK seçeneğiyle doğrudan APK veya AAB üretebilirsiniz.*
+
+---
+
+## 🍏 3. iOS (iPhone & iPad) Mobil Kurulum Kılavuzu
+
+### YÖNTEM A: Safari Ana Ekrana Ekleme (PWA)
 1. iPhone veya iPad'inizde **Safari** tarayıcısını açın ve sistem adresine gidin.
 2. Ekranın alt kısmında yer alan **Paylaş (Share)** simgesine (kare içinde yukarı ok ⎋) dokunun.
 3. Menüyü aşağı kaydırıp **"Ana Ekrana Ekle" (Add to Home Screen)** seçeneğini seçin.
 4. Sağ üstteki **"Ekle"** butonuna basın.
-5. Uygulama, telefonunuzun ana ekranına **AKG Bakım** simgesiyle yüklenir; Safari çubuğu olmadan tam ekran çalışır.
+5. Uygulama, iPhone'unuzun ana ekranına **AKG Bakım** simgesiyle yüklenir; Apple Dynamic Island ve çentik korumasıyla (Safe Area) tam ekran çalışır.
 
-### 🤖 Android (Google Chrome & Samsung Internet) Kurulumu:
-1. Android telefonunuzda **Google Chrome** tarayıcısını açın ve sistem adresine gidin.
-2. Ekranda otomatik çıkan **"Telefona Yükle"** butonuna dokunun VEYA sağ üstteki **üç nokta (⋮)** menüsünü açın.
-3. **"Uygulamayı Yükle"** veya **"Ana Ekrana Ekle"** seçeneğine dokunun.
-4. Onay verdikten sonra uygulama, cihazınızın uygulama çekmecesine ve ana ekranına bağımsız bir uygulama olarak kurulur.
+### YÖNTEM B: Capacitor ile iOS Xcode Derleme (TestFlight / App Store / IPA)
+Mac bilgisayarınızda Xcode kurulu ise:
+```bash
+npm run build
+npm install @capacitor/core @capacitor/cli @capacitor/ios
+npx cap add ios
+npx cap copy
+npx cap open ios
+```
+*Xcode açılarak doğrudan simülatöre veya bağlı iPhone'a yüklenebilir.*
 
 ---
 
-## 🐙 GitHub'a Yükleme ve Dağıtım Adımları
+## 🐙 4. GitHub'a Yükleme ve Dağıtım Adımları
 
-Bu projeyi GitHub üzerinde kendi reponuzda yayınlamak ve ekibinizle paylaşmak için aşağıdaki adımları izleyebilirsiniz:
+Bu projeyi GitHub üzerinde kendi reponuzda yayınlamak için aşağıdaki adımları izleyin:
 
 ### 1. Yeni Git Deposu Başlatma ve İlk Commit
-Terminal veya komut satırını proje klasöründe açın:
+Proje ana klasöründe terminal açın:
 ```bash
 # Git deposunu başlatın
 git init
@@ -37,89 +85,41 @@ git init
 git add .
 
 # İlk commit'i oluşturun
-git commit -m "feat: AKG CMMS Saha Bakim ve Ariza Takip Sistemi (Android & iOS PWA)"
+git commit -m "feat: AKG CMMS Saha Bakim ve Ariza Takip Sistemi"
 ```
 
 ### 2. GitHub Deponuzu Bağlama ve Yükleme (Push)
-GitHub üzerinde (`https://github.com/new`) yeni bir repo açın (örn: `bak-mop12`). Ardından:
+GitHub üzerinde (`https://github.com/new`) yeni bir boş repo açın (örn: `akg-bakim-sistemi`). Ardından:
 ```bash
 # Ana dalı main olarak ayarlayın
 git branch -M main
 
-# GitHub reponuzun URL'sini ekleyin (kendi repo adresinizi yazın)
-git remote add origin https://github.com/KULLANICI_ADINIZ/bak-mop12.git
+# Kendi GitHub reponuzun URL'sini ekleyin
+git remote add origin https://github.com/KULLANICI_ADINIZ/akg-bakim-sistemi.git
 
 # Kodları GitHub'a gönderin
 git push -u origin main
 ```
 
-### 3. GitHub Pages ile Canlı Yayına Alma (Boş Ekran Sorununu Çözme)
-GitHub Pages'de projenizi canlıya almak için iki yöntem bulunur:
-
-#### YÖNTEM A: GitHub Actions ile Otomatik Dağıtım (En Kolay & Önerilen)
+### 3. GitHub Pages ile Ücretsiz Canlı Yayına Alma
 Projede hazır bulunan `.github/workflows/deploy.yml` sayesinde GitHub otomatik build alır:
 1. GitHub reponuza gidin: **Settings** (Ayarlar) -> sol menüden **Pages** sekmesini açın.
 2. **Build and deployment** başlığı altındaki **Source** açılır kutusunu:
    👉 **`GitHub Actions`** olarak seçin.
-3. Otomatik olarak deploy iş akışı tetiklenir ve `https://KULLANICI_ADINIZ.github.io/REPO_ADINIZ/` adresinde siteniz hatasız canlıya geçer!
-
-#### YÖNTEM B: Hazır `dist/` Klasörünü Yükleme
-Eğer doğrudan derlenmiş dosyaları GitHub'a yüklemek istiyorsanız:
-1. ZIP içindeki **`dist/`** klasörünün içindeki tüm dosyaları (`index.html`, `assets/`, `manifest.webmanifest` vb.) kopyalayın.
-2. Reponuzun ana dizinine veya `gh-pages` dalına yapıştırıp commit edin.
-3. Artık göreceli yol (`base: './'`) yapılandırması sayesinde alt klasörde (`/bak-mop12/`) doğrudan çalışacaktır!
-
-### 3. GitHub Releases ile ZIP Dağıtımı
-Proje dizininde yer alan `public/akg-cmms-github-release.zip` veya `npm run pack-zip` komutu ile oluşturulan ZIP arşivini GitHub Releases bölümünden ekibinize dağıtabilirsiniz:
-1. GitHub reponuzun ana sayfasında sağ taraftaki **"Releases"** -> **"Draft a new release"** seçeneğine tıklayın.
-2. Tag olarak `v1.0.0` girin.
-3. Oluşturulan `akg-cmms-github-release.zip` dosyasını sürüm ekleri alanına sürükleyip bırakın ve **"Publish release"** butonuna basın.
+3. Otomatik olarak deploy iş akışı tetiklenir ve siteniz canlıya geçer!
 
 ---
 
-## 🚀 Yerel Geliştirme (Local Setup)
+## 🔐 5. Giriş Ekranı ve Gizlilik
 
-Bilgisayarınızda **Node.js** (v18 veya üzeri) kurulu olmalıdır:
-
-1. **Bağımlılıkları Yükleyin:**
-   ```bash
-   npm install
-   ```
-
-2. **Geliştirme Sunucusunu Başlatın:**
-   ```bash
-   npm run dev
-   ```
-   *Uygulama `http://localhost:3000` adresinde çalışacaktır.*
-
-3. **Üretim (Production) Derlemesi ve ZIP Paketleme:**
-   ```bash
-   npm run build
-   ```
-   *Bu komut hem PWA üretim kodlarını `dist/` klasörüne derler hem de `akg-cmms-github-release.zip` dağıtım paketini otomatik üretir.*
-
-4. **Manuel ZIP Üretme:**
-   ```bash
-   npm run pack-zip
-   ```
+- **Açılışta Kayıtlı Teknisyen Listesi Gizlidir:** Açılış sayfası doğrudan sade ve güvenli PIN tuş takımı ile karşılar. Cihaz başındaki yetkisiz kişilerin tüm teknisyen listesini ve PIN kodlarını doğrudan görmesi engellenmiştir.
+- **Dinamik Eşleşme:** Teknisyen kendi PIN'ini tuşladığında ismi ve fotoğrafı otomatik eşleşir ve 1 dokunuşla sisteme girer.
+- **İsteğe Bağlı Liste:** İhtiyaç duyulduğunda alt kısımdaki *"Teknisyen Listesi"* butonuna tıklanarak modal pencereden isimle arama ve seçim yapılabilir.
 
 ---
 
-## ⚙️ Canlıya Alma (Hosting / Deploy) Seçenekleri
+## 🚀 6. ZIP Paketi İndirme
 
-- **Vercel / Netlify:** GitHub reponuzu bağlayıp `Framework: Vite` seçerek tek tıkla canlıya alabilirsiniz.
-- **Docker / Cloud Run:** Sağlanan container konfigürasyonuyla Cloud Run veya kendi şirket içi sunucunuza kolayca konuşlandırabilirsiniz.
-- **PWA HTTPS Zorunluluğu:** PWA servis çalışanlarının (Service Worker) ve kamera tabanlı QR kod okuyucusunun çalışabilmesi için canlı ortamda **HTTPS** protokolünün aktif olması gereklidir (Vercel, Netlify ve Cloud Run bunu otomatik sağlar).
+- Uygulama giriş ekranının sağ üst köşesindeki **`GitHub Paketi (.ZIP)`** butonuna tıklayarak en güncel, GitHub'a doğrudan yüklenebilir ve Windows / Android / iOS uyumlu arşivi tek tıkla cihazınıza indirebilirsiniz.
+- Konsolda `npm run pack-zip` veya `npm run build` komutları çalıştırıldığında bu paket otomatik olarak `public/akg-cmms-github-release.zip` konumuna güncellenir.
 
----
-
-## 🌟 Öne Çıkan Özellikler
-
-- **📱 Android & iOS Tam Destek:** Standalone tam ekran çalışma, safe-area (çentik/Dynamic Island) uyumu, dokunma optimizasyonu.
-- **⚡ Otomatik Müdahale & Süre Takibi:** Teknisyen ve yardımcı operatörlerin çalışma süreleri katıldıkları andan itibaren sistem tarafından **otomatik ve net dakika** olarak hesaplanır.
-- **📊 Google E-Tablo & Apps Script API Entegrasyonu:** Kapatılan arızalar Google E-Tablolardaki 16 sütunlu resmi bakım loguna ve operatör performans tablosuna otomatik kaydedilir.
-- **📷 Karekod / QR ile Makine Doğrulama:** Sahada bakım yapılacak makinenin QR kodunu okutarak doğrudan arızaya müdahale başlatma veya yeni arıza kaydı açma.
-- **📴 Çevrimdışı (Offline) Önbellek Desteği:** Workbox tabanlı service worker sayesinde saha içindeki WiFi kopmalarında dahi sistem kesintisiz arayüz sunar.
-- **🔔 Endüstriyel Ses Efektleri:** Arıza açılışı, operatör çağrısı ve kapanış işlemleri için özel ses bildirimleri.
-- **💬 Operatörler Arası Mesajlaşma (P2P):** Vardiyadaki teknisyenler arasında canlı bildirim ve anlık bilgi akışı.
-- **🔐 PIN Korumalı Operatör Girişi & Yönetici Paneli:** Yetki bazlı arıza kodları yönetimi, QR muafiyet tanımlama ve haftalık WhatsApp özet raporları.

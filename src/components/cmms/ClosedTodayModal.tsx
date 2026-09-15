@@ -39,17 +39,24 @@ export const ClosedTodayModal: React.FC<ClosedTodayModalProps> = ({
 
   const unsyncedCount = closedToday.filter((f) => !f.syncedToSheets).length;
 
-  // Filter operator's own contribution today
-  const myClosed = closedToday.filter(
-    (f) =>
-      f.closedBy === currentOperator.name ||
-      (f.interventions &&
-        f.interventions.some((i) => i.operator === currentOperator.name))
-  );
+  // Filter operator's own contribution today (both as primary and as helper)
+  const currentOpUpper = (currentOperator?.name || '').trim().toLocaleUpperCase('tr-TR');
+
+  const myClosed = closedToday.filter((f) => {
+    const isPrimary = (f.closedBy || '').trim().toLocaleUpperCase('tr-TR') === currentOpUpper;
+    const isHelper =
+      Array.isArray(f.interventions) &&
+      f.interventions.some(
+        (i) => (i.operator || '').trim().toLocaleUpperCase('tr-TR') === currentOpUpper
+      );
+    return isPrimary || isHelper;
+  });
 
   const myTotalMinutes = myClosed.reduce((sum, f) => {
-    const myLog = f.interventions?.find((i) => i.operator === currentOperator.name);
-    return sum + (myLog ? myLog.minutes : f.totalDowntimeMinutes || 0);
+    const myLog = f.interventions?.find(
+      (i) => (i.operator || '').trim().toLocaleUpperCase('tr-TR') === currentOpUpper
+    );
+    return sum + (myLog ? Number(myLog.minutes) || 0 : Number(f.totalDowntimeMinutes) || 0);
   }, 0);
 
   const hours = Math.floor(myTotalMinutes / 60);
@@ -141,7 +148,7 @@ export const ClosedTodayModal: React.FC<ClosedTodayModalProps> = ({
                           backgroundColor: getFaultTypeConfig(f.faultType).badgeBg
                         }}
                       >
-                        {f.faultType}
+                        {getFaultTypeConfig(f.faultType).shortName || f.faultType}
                       </span>
                       {f.syncedToSheets ? (
                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950/90 text-emerald-400 border border-emerald-800/80 flex items-center gap-1">
@@ -183,6 +190,20 @@ export const ClosedTodayModal: React.FC<ClosedTodayModalProps> = ({
                       <span className="text-cyan-300">{f.partsChanged}</span>
                     </div>
                   )}
+                  {f.interventions &&
+                    f.interventions.some((i) => i.role === 'helper' && i.operator) && (
+                      <div className="text-[11px]">
+                        <span className="text-slate-500 font-semibold">
+                          Yardımcı Teknisyenler:
+                        </span>{' '}
+                        <span className="text-emerald-300 font-medium">
+                          {f.interventions
+                            .filter((i) => i.role === 'helper' && i.operator)
+                            .map((i) => `${i.operator} (${i.minutes} dk)`)
+                            .join(', ')}
+                        </span>
+                      </div>
+                    )}
                   <div className="flex items-center justify-between text-slate-400 pt-1 border-t border-slate-800">
                     <span>Kapatan: {f.closedBy || f.assignedTo}</span>
                     <span>

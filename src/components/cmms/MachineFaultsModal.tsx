@@ -110,8 +110,7 @@ export const MachineFaultsModal: React.FC<MachineFaultsModalProps> = ({
                           border: `1px solid ${typeCfg.color}60`
                         }}
                       >
-                        <span>{typeCfg.sheetName || f.faultType}</span>
-                        <span className="font-mono opacity-80 text-[9px]">{typeCfg.color}</span>
+                        <span>{typeCfg.shortName || typeCfg.name || f.faultType}</span>
                       </span>
                       <p className="text-xs font-semibold text-white mt-1">
                         {f.description}

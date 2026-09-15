@@ -14,6 +14,22 @@ html, body {
   overscroll-behavior-y: none;
   padding-top: var(--sat);
   padding-bottom: var(--sab);
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Hide scrollbars completely across ALL browsers and elements while maintaining full scrolling */
+html, body, #root, div, main, section, nav, ul, * {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
+}
+
+::-webkit-scrollbar, *::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Edge, Opera */
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
 /* iOS Safari status bar / standalone spacing */

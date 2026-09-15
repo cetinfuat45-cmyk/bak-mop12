@@ -76,11 +76,19 @@ export const WeeklyReportModal: React.FC<WeeklyReportModalProps> = ({
       text += `- Bugün kapatılan arıza kaydı yok.\n`;
     } else {
       closedToday.forEach((f, i) => {
+        const helpersStr =
+          f.interventions &&
+          f.interventions.filter((inv) => inv.role === 'helper' && inv.operator).length > 0
+            ? ` + [Yardımcı: ${f.interventions
+                .filter((inv) => inv.role === 'helper' && inv.operator)
+                .map((inv) => `${inv.operator} (${inv.minutes} dk)`)
+                .join(', ')}]`
+            : '';
         text += `${i + 1}. *${f.machine}* [${f.faultType}]\n   - İşlem: ${
           f.actionTaken || f.description
         }\n   - Sorumlu: ${f.closedBy || f.assignedTo} (${
           f.totalDowntimeMinutes || 0
-        } dk)\n`;
+        } dk)${helpersStr}\n`;
       });
     }
 
@@ -160,7 +168,11 @@ export const WeeklyReportModal: React.FC<WeeklyReportModalProps> = ({
             </thead>
             <tbody className="divide-y divide-slate-800/80 font-mono">
               {operators.map((op, opIdx) => {
-                const opStats = weeklyStats[op.name] || {};
+                const opUpper = (op.name || '').trim().toLocaleUpperCase('tr-TR');
+                const matchedKey = Object.keys(weeklyStats).find(
+                  (k) => k.trim().toLocaleUpperCase('tr-TR') === opUpper
+                );
+                const opStats = matchedKey ? weeklyStats[matchedKey] : (weeklyStats[op.name] || {});
                 let opTotal = 0;
                 DAYS.forEach((d) => {
                   opTotal += opStats[d] || 0;

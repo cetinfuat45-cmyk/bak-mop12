@@ -44,8 +44,8 @@ export type VeriSheetGroup = (typeof VERI_SHEET_COLUMN_G_GROUPS)[number];
 
 const DEF_MEKANIK: FaultTypeColorConfig = {
   id: 'MEKANİK ARIZA',
-  name: 'MEKANİK ARIZA',
-  shortName: 'Mekanik',
+  name: 'Mek Arıza',
+  shortName: 'Mek Arıza',
   sheetName: 'MEKANİK ARIZA',
   color: FAULT_COLOR_CODES.MEKANIK,
   bgColor: 'rgba(0, 255, 255, 0.08)',
@@ -58,8 +58,8 @@ const DEF_MEKANIK: FaultTypeColorConfig = {
 
 const DEF_ELEKTRIK: FaultTypeColorConfig = {
   id: 'ELEKTRİK ARIZA',
-  name: 'ELEKTRİK ARIZA',
-  shortName: 'Elektrik',
+  name: 'Elek Arıza',
+  shortName: 'Elek Arıza',
   sheetName: 'ELEKTRİK ARIZA',
   color: FAULT_COLOR_CODES.ELEKTRIK,
   bgColor: 'rgba(255, 255, 0, 0.08)',
@@ -72,8 +72,8 @@ const DEF_ELEKTRIK: FaultTypeColorConfig = {
 
 const DEF_ISG: FaultTypeColorConfig = {
   id: 'İŞ GÜVENLİĞİ !!!',
-  name: 'İŞ GÜVENLİĞİ !!!',
-  shortName: 'İSG',
+  name: 'İş Güvenliği',
+  shortName: 'İş Güvenliği',
   sheetName: 'İŞ GÜVENLİĞİ !!!',
   color: FAULT_COLOR_CODES.ISG,
   bgColor: 'rgba(255, 0, 0, 0.08)',
@@ -86,7 +86,7 @@ const DEF_ISG: FaultTypeColorConfig = {
 
 const DEF_PLANLI_BAKIM: FaultTypeColorConfig = {
   id: 'PLANLI BAKIM KODU',
-  name: 'PLANLI BAKIM KODU',
+  name: 'Planlı Bakım',
   shortName: 'Planlı Bakım',
   sheetName: 'PLANLI BAKIM KODU',
   color: FAULT_COLOR_CODES.PLANLI_BAKIM,
@@ -100,7 +100,7 @@ const DEF_PLANLI_BAKIM: FaultTypeColorConfig = {
 
 const DEF_TEKRAR_EDEN: FaultTypeColorConfig = {
   id: 'TEKRAR EDEN ARIZA  !!!!',
-  name: 'TEKRAR EDEN ARIZA  !!!!',
+  name: 'Tekrar Eden',
   shortName: 'Tekrar Eden',
   sheetName: 'TEKRAR EDEN ARIZA  !!!!',
   color: FAULT_COLOR_CODES.TEKRAR_EDEN,
@@ -277,4 +277,19 @@ export function isMatchingFaultGroup(typeA?: string, typeB?: string): boolean {
   const cfgA = getFaultTypeConfig(typeA);
   const cfgB = getFaultTypeConfig(typeB);
   return cfgA.sheetName === cfgB.sheetName || cfgA.id === cfgB.id;
+}
+
+/**
+ * Formats an operator name to abbreviated format
+ * Example: "Engin Vardar" -> "E. Vardar"
+ * Example: "Ahmet Can Kaya" -> "A.C. Kaya"
+ */
+export function formatShortOperatorName(fullName?: string | null): string {
+  if (!fullName) return '';
+  const trimmed = fullName.trim();
+  const parts = trimmed.split(/\s+/);
+  if (parts.length <= 1) return trimmed;
+  const initials = parts.slice(0, -1).map((p) => p.charAt(0).toLocaleUpperCase('tr-TR') + '.').join('');
+  const lastName = parts[parts.length - 1];
+  return `${initials} ${lastName}`;
 }
