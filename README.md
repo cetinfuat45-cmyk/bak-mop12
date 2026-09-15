@@ -41,17 +41,33 @@ git commit -m "feat: AKG CMMS Saha Bakim ve Ariza Takip Sistemi (Android & iOS P
 ```
 
 ### 2. GitHub Deponuzu Bağlama ve Yükleme (Push)
-GitHub üzerinde (`https://github.com/new`) yeni bir repo açın (örn: `akg-cmms`). Ardından:
+GitHub üzerinde (`https://github.com/new`) yeni bir repo açın (örn: `bak-mop12`). Ardından:
 ```bash
 # Ana dalı main olarak ayarlayın
 git branch -M main
 
 # GitHub reponuzun URL'sini ekleyin (kendi repo adresinizi yazın)
-git remote add origin https://github.com/KULLANICI_ADINIZ/akg-cmms.git
+git remote add origin https://github.com/KULLANICI_ADINIZ/bak-mop12.git
 
 # Kodları GitHub'a gönderin
 git push -u origin main
 ```
+
+### 3. GitHub Pages ile Canlı Yayına Alma (Boş Ekran Sorununu Çözme)
+GitHub Pages'de projenizi canlıya almak için iki yöntem bulunur:
+
+#### YÖNTEM A: GitHub Actions ile Otomatik Dağıtım (En Kolay & Önerilen)
+Projede hazır bulunan `.github/workflows/deploy.yml` sayesinde GitHub otomatik build alır:
+1. GitHub reponuza gidin: **Settings** (Ayarlar) -> sol menüden **Pages** sekmesini açın.
+2. **Build and deployment** başlığı altındaki **Source** açılır kutusunu:
+   👉 **`GitHub Actions`** olarak seçin.
+3. Otomatik olarak deploy iş akışı tetiklenir ve `https://KULLANICI_ADINIZ.github.io/REPO_ADINIZ/` adresinde siteniz hatasız canlıya geçer!
+
+#### YÖNTEM B: Hazır `dist/` Klasörünü Yükleme
+Eğer doğrudan derlenmiş dosyaları GitHub'a yüklemek istiyorsanız:
+1. ZIP içindeki **`dist/`** klasörünün içindeki tüm dosyaları (`index.html`, `assets/`, `manifest.webmanifest` vb.) kopyalayın.
+2. Reponuzun ana dizinine veya `gh-pages` dalına yapıştırıp commit edin.
+3. Artık göreceli yol (`base: './'`) yapılandırması sayesinde alt klasörde (`/bak-mop12/`) doğrudan çalışacaktır!
 
 ### 3. GitHub Releases ile ZIP Dağıtımı
 Proje dizininde yer alan `public/akg-cmms-github-release.zip` veya `npm run pack-zip` komutu ile oluşturulan ZIP arşivini GitHub Releases bölümünden ekibinize dağıtabilirsiniz:

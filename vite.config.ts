@@ -6,6 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
   return {
+    base: './',
     plugins: [
       react(),
       tailwindcss(),
@@ -13,7 +14,6 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
-          id: '/',
           name: 'AKG Bakım & Arıza Takip Sistemi',
           short_name: 'AKG Bakım',
           description: 'AKG Saha Bakım ve Arıza Takip Sistemi (CMMS) mobil ve saha operatör paneli.',
@@ -21,8 +21,8 @@ export default defineConfig(() => {
           background_color: '#020617',
           display: 'standalone',
           orientation: 'any',
-          start_url: '/',
-          scope: '/',
+          start_url: './',
+          scope: './',
           icons: [
             {
               src: '/pwa-192x192.png',
