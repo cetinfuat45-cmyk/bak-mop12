@@ -35,6 +35,7 @@ import { AdminMessageMonitorModal } from './components/cmms/AdminMessageMonitorM
 import { OperatorSettingsModal } from './components/cmms/OperatorSettingsModal';
 import { ViewSettingsModal } from './components/cmms/ViewSettingsModal';
 import { ThemeSettingsModal } from './components/cmms/ThemeSettingsModal';
+import { MobileBottomNav } from './components/cmms/MobileBottomNav';
 
 const DEFAULT_VIEW_SETTINGS: ViewSettings = {
   displayMode: 'card',
@@ -104,6 +105,7 @@ export default function App() {
   const [isOperatorSettingsOpen, setIsOperatorSettingsOpen] = useState(false);
   const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
   const [isThemeSettingsOpen, setIsThemeSettingsOpen] = useState(false);
+  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
 
   // Sync sound setting
   useEffect(() => {
@@ -667,6 +669,8 @@ export default function App() {
             currentOperator={currentOperator}
             dailyStatsText={getDailyStatsText()}
             unreadMessageCount={unreadMessageCount}
+            isMenuOpen={isHeaderMenuOpen}
+            setIsMenuOpen={setIsHeaderMenuOpen}
             onLogout={handleLogout}
             onOpenQrScanner={() => {
               setTargetScanFault(null);
@@ -704,7 +708,7 @@ export default function App() {
           />
 
           {/* Main Faults Feed */}
-          <main className="flex-1 overflow-hidden flex flex-col bg-slate-950">
+          <main className="flex-1 overflow-hidden flex flex-col bg-slate-950 pb-16 sm:pb-0">
             <FaultsList
               faults={faults}
               currentOperator={currentOperator}
@@ -718,6 +722,34 @@ export default function App() {
               onUpdateViewSettings={handleUpdateViewSettings}
             />
           </main>
+
+          {/* Native Mobile Bottom Navigation Bar (Visible only on mobile devices) */}
+          <MobileBottomNav
+            activeTab="all"
+            onSelectTab={() => {
+              const scrollEl = document.querySelector('main');
+              if (scrollEl) scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOpenQrScanner={() => {
+              setTargetScanFault(null);
+              setIsQrModalOpen(true);
+            }}
+            onOpenMessageModal={() => {
+              setMessageReplyTarget('ALL');
+              setIsMessageModalOpen(true);
+            }}
+            onOpenMenu={() => setIsHeaderMenuOpen((prev) => !prev)}
+            openFaultsCount={faults.filter((f) => f.status !== 'Kapalı').length}
+            myFaultsCount={
+              faults.filter(
+                (f) =>
+                  f.status !== 'Kapalı' &&
+                  (f.assignedTo === currentOperator.name ||
+                    (f.helpers && f.helpers.includes(currentOperator.name)))
+              ).length
+            }
+            unreadMessageCount={unreadMessageCount}
+          />
 
           {/* CMMS Modals */}
           <QrScannerModal

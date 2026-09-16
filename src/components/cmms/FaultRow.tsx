@@ -11,7 +11,7 @@ import {
   Check
 } from 'lucide-react';
 import { Fault, Operator, ViewSettings } from '../../types';
-import { getFaultTypeConfig, formatShortOperatorName } from '../../utils/faultColors';
+import { getFaultTypeConfig, formatShortOperatorName, cleanFaultTypeName } from '../../utils/faultColors';
 
 interface FaultRowProps {
   fault: Fault;
@@ -155,7 +155,7 @@ export const FaultRow: React.FC<FaultRowProps> = ({
               >
                 <TypeIcon className="w-3 h-3 flex-shrink-0" />
                 <span className="truncate max-w-[120px]">
-                  {typeConfig.shortName || typeConfig.name || fault.faultType}
+                  {cleanFaultTypeName(typeConfig.shortName || typeConfig.name || fault.faultType)}
                 </span>
               </span>
             )}

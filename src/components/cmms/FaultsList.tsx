@@ -15,7 +15,8 @@ import {
   ORDERED_FAULT_TYPES,
   getFaultTypeConfig,
   isMatchingFaultGroup,
-  VERI_SHEET_COLUMN_G_GROUPS
+  VERI_SHEET_COLUMN_G_GROUPS,
+  cleanFaultTypeName
 } from '../../utils/faultColors';
 
 interface FaultsListProps {
@@ -381,7 +382,7 @@ export const FaultsList: React.FC<FaultsListProps> = ({
                     </div>
                     <div>
                       <h3 className="text-sm sm:text-base font-extrabold text-white tracking-wide">
-                        {group.config.shortName || group.config.name}
+                        {cleanFaultTypeName(group.config.shortName || group.config.name)}
                       </h3>
                       <p className="text-[11px] text-slate-400 mt-0.5">
                         {group.items.length} arıza kaydı müdahale bekliyor

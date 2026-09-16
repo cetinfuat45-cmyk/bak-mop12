@@ -18,7 +18,7 @@ import {
   History
 } from 'lucide-react';
 import { Fault, Operator, ViewSettings } from '../../types';
-import { getFaultTypeConfig, formatShortOperatorName } from '../../utils/faultColors';
+import { getFaultTypeConfig, formatShortOperatorName, cleanFaultTypeName } from '../../utils/faultColors';
 
 interface FaultCardProps {
   fault: Fault;
@@ -183,7 +183,7 @@ export const FaultCard: React.FC<FaultCardProps> = ({
                 }}
               >
                 <TypeIcon className="w-3.5 h-3.5" />
-                <span>{typeConfig.shortName || typeConfig.name || fault.faultType}</span>
+                <span>{cleanFaultTypeName(typeConfig.shortName || typeConfig.name || fault.faultType)}</span>
               </span>
             )}
 

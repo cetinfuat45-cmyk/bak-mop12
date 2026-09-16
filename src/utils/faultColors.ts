@@ -150,12 +150,39 @@ export const ORDERED_FAULT_TYPES: string[] = [
 ];
 
 /**
+ * Cleans a raw fault type string by removing raw hex color tags (e.g. #FFA500, #FF0000)
+ * and excessive exclamation marks, returning a clean professional label.
+ */
+export function cleanFaultTypeName(rawType?: string | null): string {
+  if (!rawType) return 'Mekanik Arıza';
+  let cleaned = String(rawType)
+    .replace(/#[0-9A-Fa-f]{3,8}\b/gi, '') // Remove hex codes like #FFA500
+    .replace(/!+/g, '')                  // Remove exclamation marks
+    .trim();
+
+  // Normalize all-caps or messy sheet names to polished title case
+  const lower = cleaned
+    .replace(/İ/g, 'i')
+    .replace(/I/g, 'ı')
+    .toLowerCase();
+
+  if (lower.includes('güvenlik') || lower.includes('isg')) return 'İş Güvenliği';
+  if (lower.includes('tekrar') || lower.includes('kronik')) return 'Tekrar Eden Arıza';
+  if (lower.includes('plan')) return 'Planlı Bakım';
+  if (lower.includes('elektrik') || lower.includes('pano') || lower.includes('otomasyon')) return 'Elektrik Arıza';
+  if (lower.includes('mekanik') || lower.includes('hidrolik') || lower.includes('pnömatik')) return 'Mekanik Arıza';
+
+  return cleaned || 'Genel Arıza';
+}
+
+/**
  * Compares an input string against Google Sheets 'veri' tab Column G fault groups
  * and returns the exact Column G value.
  */
 export function matchVeriSheetFaultGroup(type?: string | null): VeriSheetGroup {
   if (!type) return 'MEKANİK ARIZA';
-  const t = String(type).trim();
+  // Strip raw hex codes like #FFA500 or #FF0000 before matching
+  const t = String(type).replace(/#[0-9A-Fa-f]{3,8}\b/gi, '').trim();
 
   // Exact match with Column G
   if (VERI_SHEET_COLUMN_G_GROUPS.includes(t as VeriSheetGroup)) {
@@ -239,25 +266,28 @@ export function matchVeriSheetFaultGroup(type?: string | null): VeriSheetGroup {
  */
 export function getFaultTypeConfig(type?: string): FaultTypeColorConfig {
   if (!type) return DEF_MEKANIK;
-  const t = String(type).trim();
+  // Clean raw hex color codes e.g. #FFA500 that might be stored inside the string
+  const cleanInput = String(type).replace(/#[0-9A-Fa-f]{3,8}\b/gi, '').trim();
 
   // Direct map match
-  if (FAULT_TYPE_DEFINITIONS[t]) {
-    return FAULT_TYPE_DEFINITIONS[t];
+  if (FAULT_TYPE_DEFINITIONS[cleanInput]) {
+    return FAULT_TYPE_DEFINITIONS[cleanInput];
   }
 
   // Compare against Column G groups
-  const matchedGroup = matchVeriSheetFaultGroup(t);
+  const matchedGroup = matchVeriSheetFaultGroup(cleanInput);
   if (FAULT_TYPE_DEFINITIONS[matchedGroup]) {
     return FAULT_TYPE_DEFINITIONS[matchedGroup];
   }
 
+  const cleanLabel = cleanFaultTypeName(type);
+
   // Fallback generic but preserve type info
   return {
-    id: t,
-    name: t,
-    shortName: t,
-    sheetName: t,
+    id: cleanLabel,
+    name: cleanLabel,
+    shortName: cleanLabel,
+    sheetName: matchedGroup || cleanInput,
     color: FAULT_COLOR_CODES.DIGER,
     bgColor: 'rgba(148, 163, 184, 0.08)',
     borderColor: 'rgba(148, 163, 184, 0.45)',

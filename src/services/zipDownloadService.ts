@@ -1,46 +1,94 @@
 import Swal from 'sweetalert2';
 
 /**
- * Robust Project ZIP Downloader for Browser & Iframe environments
- * Fetches the binary blob, checks integrity, and triggers native download for GitHub distribution
+ * Robust Project ZIP Downloader for Browser, Mobile, GitHub Pages & Iframe environments
+ * Uses relative path resolution and direct download fallbacks to prevent 403 / CORS errors.
  */
 export async function downloadProjectZip(filename = 'akg-cmms-github-release.zip'): Promise<boolean> {
   try {
     Swal.fire({
       title: 'ZIP Paketi Hazırlanıyor...',
-      text: 'GitHub dağıtım arşivi indiriliyor, lütfen bekleyin.',
+      text: 'Dağıtım arşivi indiriliyor, lütfen bekleyin.',
       allowOutsideClick: false,
       didOpen: () => Swal.showLoading(),
       background: '#0f172a',
       color: '#f8fafc'
     });
 
-    let targetUrl = `/${filename}`;
-    let response = await fetch(targetUrl, {
-      headers: {
-        'Cache-Control': 'no-cache',
-        Pragma: 'no-cache'
-      }
-    });
+    // Detect base URL dynamically for GitHub Pages (e.g. /repository-name/)
+    const currentPath = window.location.pathname;
+    const basePath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+    
+    const candidateUrls = [
+      `${basePath}${filename}`,
+      `./${filename}`,
+      filename,
+      `/${filename}`,
+      `${basePath}akg-cmms-sistemi.zip`,
+      './akg-cmms-sistemi.zip'
+    ];
 
-    if (!response.ok) {
-      // Fallback to akg-cmms-sistemi.zip
-      targetUrl = '/akg-cmms-sistemi.zip';
-      response = await fetch(targetUrl, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          Pragma: 'no-cache'
+    let response: Response | null = null;
+    let successfulUrl = '';
+
+    for (const url of candidateUrls) {
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache'
+          }
+        });
+        if (res.ok) {
+          response = res;
+          successfulUrl = url;
+          break;
         }
-      });
+      } catch (err) {
+        console.warn(`Fetch failed for candidate URL: ${url}`, err);
+      }
     }
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} - Dağıtım ZIP dosyası sunucudan alınamadı.`);
+    if (!response || !response.ok) {
+      // If fetch fails (e.g., HTTP 403 or CORS on GitHub Pages), try direct browser link download
+      console.warn('Fetch failed on all candidates, triggering direct anchor download fallback...');
+      const fallbackAnchor = document.createElement('a');
+      fallbackAnchor.href = `./${filename}`;
+      fallbackAnchor.setAttribute('download', filename);
+      fallbackAnchor.target = '_blank';
+      fallbackAnchor.rel = 'noopener noreferrer';
+      document.body.appendChild(fallbackAnchor);
+      fallbackAnchor.click();
+      setTimeout(() => {
+        try {
+          document.body.removeChild(fallbackAnchor);
+        } catch {}
+      }, 2000);
+
+      Swal.fire({
+        icon: 'info',
+        title: 'İndirme Başlatıldı',
+        html: `
+          <div class="text-left text-xs space-y-2 text-slate-300">
+            <p>Tarayıcınızın doğrudan dosya indirme mekanizması tetiklendi.</p>
+            <p class="text-slate-400">Eğer indirme otomatik başlamadıysa aşağıdaki butona tıklayabilirsiniz:</p>
+            <div class="pt-2 flex justify-center">
+              <a href="./${filename}" download="${filename}" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-lg">
+                ⬇️ Dosyayı Doğrudan İndir (${filename})
+              </a>
+            </div>
+          </div>
+        `,
+        background: '#0f172a',
+        color: '#f8fafc',
+        confirmButtonColor: '#0284c7'
+      });
+      return true;
     }
 
     const blob = await response.blob();
-    if (blob.size < 1000) {
-      throw new Error('İndirilen arşiv boyutu beklenenden küçük veya eksik.');
+    if (blob.size < 500) {
+      throw new Error('İndirilen arşiv boyutu beklenenden küçük.');
     }
 
     const url = window.URL.createObjectURL(blob);
@@ -82,20 +130,28 @@ export async function downloadProjectZip(filename = 'akg-cmms-github-release.zip
     return true;
   } catch (error: any) {
     console.error('ZIP indirme hatası:', error);
+    
+    // Direct link fallback
+    const directUrl = `./${filename}`;
     Swal.fire({
-      icon: 'error',
-      title: 'İndirme Hatası',
-      text: error.message || 'ZIP arşivi indirilirken bir sorun oluştu.',
+      icon: 'warning',
+      title: 'Doğrudan İndirme Bağlantısı',
+      html: `
+        <div class="text-left text-xs space-y-3 text-slate-300">
+          <p>Tarayıcı güvenlik kısıtlaması nedeniyle otomatik indirme tamamlanamadı (${error.message || 'CORS/403'}).</p>
+          <p>Aşağıdaki bağlantıya tıklayarak ZIP dosyasını doğrudan cihazınıza kaydedebilirsiniz:</p>
+          <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-center">
+            <a href="${directUrl}" download="${filename}" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs inline-flex items-center gap-2">
+              📦 ${filename} Dosyasını İndir
+            </a>
+          </div>
+        </div>
+      `,
       background: '#0f172a',
-      color: '#f8fafc'
+      color: '#f8fafc',
+      confirmButtonColor: '#059669'
     });
 
-    // Direct link fallback
-    const fallbackLink = document.createElement('a');
-    fallbackLink.href = '/akg-cmms-github-release.zip';
-    fallbackLink.target = '_blank';
-    fallbackLink.download = 'akg-cmms-github-release.zip';
-    fallbackLink.click();
     return false;
   }
 }

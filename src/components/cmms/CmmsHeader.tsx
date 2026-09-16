@@ -28,6 +28,8 @@ interface CmmsHeaderProps {
   currentOperator: Operator;
   dailyStatsText: string;
   unreadMessageCount?: number;
+  isMenuOpen?: boolean;
+  setIsMenuOpen?: (open: boolean) => void;
   onLogout: () => void;
   onOpenQrScanner: () => void;
   onOpenClosedToday: () => void;
@@ -50,6 +52,8 @@ export const CmmsHeader: React.FC<CmmsHeaderProps> = ({
   currentOperator,
   dailyStatsText,
   unreadMessageCount = 0,
+  isMenuOpen,
+  setIsMenuOpen,
   onLogout,
   onOpenQrScanner,
   onOpenClosedToday,
@@ -67,7 +71,15 @@ export const CmmsHeader: React.FC<CmmsHeaderProps> = ({
   onClearCache,
   onSwitchToFlowchart
 }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [internalMenuOpen, setInternalMenuOpen] = useState(false);
+  const menuOpen = isMenuOpen !== undefined ? isMenuOpen : internalMenuOpen;
+  const setMenuOpen = (val: boolean) => {
+    if (setIsMenuOpen) {
+      setIsMenuOpen(val);
+    } else {
+      setInternalMenuOpen(val);
+    }
+  };
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,22 +95,32 @@ export const CmmsHeader: React.FC<CmmsHeaderProps> = ({
   const isAdmin = currentOperator.role === 'admin';
 
   return (
-    <header className="bg-slate-900 border-b border-slate-800 text-white px-3 sm:px-5 py-2.5 flex items-center justify-between shadow-md relative z-40">
+    <header className="bg-slate-900/95 backdrop-blur border-b border-slate-800 text-white px-3 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between shadow-md relative z-40 select-none pt-[calc(0.5rem+env(safe-area-inset-top,0px))]">
       {/* Left: Brand */}
       <div className="flex items-center gap-2 sm:gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-500/20">
-            <Wrench className="w-5 h-5 text-white" />
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-500/20 flex-shrink-0">
+            <Wrench className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
           <div>
-            <div className="text-sm font-black tracking-tight text-white flex items-center gap-1.5">
+            <div className="text-xs sm:text-sm font-black tracking-tight text-white flex items-center gap-1.5">
               <span>AKG BAKIM</span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-950 border border-cyan-800 text-cyan-400">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold bg-cyan-950 border border-cyan-800 text-cyan-400">
                 CMMS
               </span>
             </div>
           </div>
         </div>
+
+        {/* Desktop Flowchart Switcher */}
+        <button
+          onClick={onSwitchToFlowchart}
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition-all active:scale-95 shadow-sm"
+          title="Süreç Akış Şeması ve Sistem Mimarisi Görünümüne Geç"
+        >
+          <Layers className="w-4 h-4 text-cyan-400" />
+          <span>Akış Şeması</span>
+        </button>
       </div>
 
       {/* Right: Operator Info + Quick Messages + Menu */}
@@ -119,25 +141,25 @@ export const CmmsHeader: React.FC<CmmsHeaderProps> = ({
         </button>
 
         {/* Operator Profile Card */}
-        <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-950/80 border border-slate-800">
+        <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 rounded-xl bg-slate-950/80 border border-slate-800">
           <img
             src={
               currentOperator.photo ||
               'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
             }
             alt={currentOperator.name}
-            className="w-7 h-7 rounded-full object-cover border border-cyan-500/60"
+            className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-cyan-500/60 flex-shrink-0"
           />
           <div className="text-left hidden xs:block">
             <div className="text-xs font-bold text-white flex items-center gap-1">
-              <span>{currentOperator.shortName || currentOperator.name}</span>
+              <span className="truncate max-w-[90px] sm:max-w-none">{currentOperator.shortName || currentOperator.name}</span>
               {isAdmin && (
-                <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950 border border-amber-700 text-amber-300 font-extrabold">
+                <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950 border border-amber-700 text-amber-300 font-extrabold flex-shrink-0">
                   ADM
                 </span>
               )}
             </div>
-            <div className="text-[10px] text-cyan-400 font-medium">
+            <div className="text-[10px] text-cyan-400 font-medium hidden sm:block">
               {dailyStatsText}
             </div>
           </div>
@@ -147,7 +169,7 @@ export const CmmsHeader: React.FC<CmmsHeaderProps> = ({
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="p-2 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 hover:text-white transition-all shadow-sm flex items-center gap-1"
+            className="p-1.5 sm:p-2 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 hover:text-white transition-all shadow-sm flex items-center gap-1"
             title="Sistem Menüsü"
           >
             <Settings className="w-4 h-4" />
@@ -163,6 +185,18 @@ export const CmmsHeader: React.FC<CmmsHeaderProps> = ({
                   {currentOperator.role}
                 </span>
               </div>
+
+              {/* Süreç Akış Şeması */}
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  onSwitchToFlowchart();
+                }}
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-800 flex items-center gap-2.5 transition-colors text-cyan-400 font-semibold"
+              >
+                <Layers className="w-4 h-4 text-cyan-400" />
+                <span>📊 Süreç Akış Şeması & Mimari</span>
+              </button>
 
               {/* Standard Options */}
               <button
