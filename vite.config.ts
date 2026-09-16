@@ -12,12 +12,11 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
+        includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],
         manifest: {
           name: 'AKG Bakım & Arıza Takip Sistemi',
           short_name: 'AKG Bakım',
           description: 'AKG Saha Bakım ve Arıza Takip Sistemi (CMMS) mobil ve saha operatör paneli.',
-          id: 'akg-cmms-saha-takip',
           theme_color: '#020617',
           background_color: '#020617',
           display: 'standalone',
@@ -43,6 +42,12 @@ export default defineConfig(() => {
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable',
+            },
+            {
+              src: 'pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'any maskable',
             },
           ],
         },

@@ -117,22 +117,26 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ variant = 'h
               </div>
 
               {/* Android Guide */}
-              <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/80 space-y-2">
+              <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/80 space-y-2.5">
                 <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
                   <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
                   <span>Android (Chrome / Samsung Internet):</span>
                 </div>
-                <ol className="text-xs text-slate-300 space-y-1.5 list-decimal list-inside pl-1">
+                <ol className="text-xs text-slate-300 space-y-2 list-decimal list-inside pl-1">
                   <li className="leading-relaxed">
                     Chrome sağ üstteki <b>üç nokta (⋮)</b> menüsüne dokunun.
                   </li>
                   <li className="leading-relaxed">
-                    <b>"Uygulamayı Yükle"</b> veya <b>"Ana Ekrana Ekle"</b> seçeneğine dokunun.
+                    <b>"Ana Ekrana Ekle"</b> seçeneğine dokunun. (<i>"Uygulama yüklenemez" uyarısını engeller, anında kurulur</i>).
                   </li>
                   <li className="leading-relaxed">
-                    Artık telefonunuzun menüsünden yerel uygulama gibi çalışır.
+                    Açılan onay kutusunda <b>"Ekle"</b> butonuna basarak kurulumu bitirin.
                   </li>
                 </ol>
+
+                <div className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-800/50 text-[11px] text-emerald-300 leading-snug">
+                  💡 <b>İpucu:</b> Eğer Chrome <i>"Bu uygulama yüklenemez"</i> derse, bunun nedeni Chrome'un Play Store WebAPK servisidir. Çözümü: Menüden <b>"Uygulamayı Yükle"</b> yerine <b>"Ana Ekrana Ekle"</b> seçeneğini seçmektir.
+                </div>
               </div>
             </div>
 
