@@ -18,7 +18,7 @@ import {
   History
 } from 'lucide-react';
 import { Fault, Operator, ViewSettings } from '../../types';
-import { getFaultTypeConfig, formatShortOperatorName, cleanFaultTypeName } from '../../utils/faultColors';
+import { getFaultTypeConfig, formatShortOperatorName, formatShortShift, cleanFaultTypeName } from '../../utils/faultColors';
 
 interface FaultCardProps {
   fault: Fault;
@@ -230,8 +230,8 @@ export const FaultCard: React.FC<FaultCardProps> = ({
           {viewSettings.showReporter && (
             <span className="flex items-center gap-1">
               <span className="text-slate-500">Bildiren:</span>
-              <span className="font-medium text-slate-300">
-                {fault.reportedBy}
+              <span className="font-semibold text-slate-300">
+                {formatShortOperatorName(fault.reportedBy) || fault.reportedBy}
               </span>
             </span>
           )}
@@ -239,7 +239,9 @@ export const FaultCard: React.FC<FaultCardProps> = ({
           {viewSettings.showShift && fault.shift && (
             <span className="flex items-center gap-1">
               <span className="text-slate-500">Vardiya:</span>
-              <span className="font-medium text-slate-300">{fault.shift}</span>
+              <span className="font-medium text-slate-300 px-1 py-0.2 rounded bg-slate-850 border border-slate-700/60 text-[10px]">
+                {formatShortShift(fault.shift)}
+              </span>
             </span>
           )}
 
@@ -464,15 +466,27 @@ export const FaultCard: React.FC<FaultCardProps> = ({
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>
-                {fault.status === 'Dış Servis Bekliyor'
-                  ? 'Servis Geldi / Devam Et'
-                  : fault.status === 'Parça Bekliyor'
-                  ? 'Parça Geldi / Devral'
-                  : fault.status === 'Devredildi'
-                  ? 'Devral / Başla'
-                  : fault.status === 'Geçici Çözüm'
-                  ? 'Kalıcı Çözüme Başla'
-                  : 'Çalışmaya Başla'}
+                {fault.status === 'Dış Servis Bekliyor' ? (
+                  <>
+                    <span className="hidden sm:inline">Servis </span>Devam
+                  </>
+                ) : fault.status === 'Parça Bekliyor' ? (
+                  <>
+                    <span className="hidden sm:inline">Parça </span>Devral
+                  </>
+                ) : fault.status === 'Devredildi' ? (
+                  <>
+                    Devral<span className="hidden sm:inline"> / Başla</span>
+                  </>
+                ) : fault.status === 'Geçici Çözüm' ? (
+                  <>
+                    <span className="hidden sm:inline">Kalıcı </span>Çözüm
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Çalışmaya </span>Başla
+                  </>
+                )}
               </span>
             </button>
           )}
@@ -481,10 +495,13 @@ export const FaultCard: React.FC<FaultCardProps> = ({
           {fault.status === 'Müdahale Ediliyor' && isAssignedToMe && (
             <button
               onClick={() => onOpenInterventionModal(fault)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all active:scale-95"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Müdahaleyi Bitir / Güncelle</span>
+              <span>
+                <span className="hidden sm:inline">Müdahaleyi </span>Bitir
+                <span className="hidden sm:inline"> / Güncelle</span>
+              </span>
             </button>
           )}
 
@@ -497,7 +514,9 @@ export const FaultCard: React.FC<FaultCardProps> = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition-all shadow-md active:scale-95"
                 >
                   <UserMinus className="w-3.5 h-3.5" />
-                  <span>Bakımdan Ayrıl</span>
+                  <span>
+                    <span className="hidden sm:inline">Bakımdan </span>Ayrıl
+                  </span>
                 </button>
               ) : (
                 <button
@@ -505,7 +524,9 @@ export const FaultCard: React.FC<FaultCardProps> = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-600/90 hover:bg-cyan-500 text-white font-semibold text-xs transition-all shadow-md active:scale-95"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
-                  <span>Yardımcı Ol</span>
+                  <span>
+                    Yardım<span className="hidden sm:inline">cı Ol</span>
+                  </span>
                 </button>
               )}
             </>

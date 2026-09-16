@@ -13,6 +13,8 @@ import {
 import { Fault, Operator } from '../../types';
 import { getFaultTypeConfig } from '../../utils/faultColors';
 
+import { areLooseMatches } from '../../utils/textUtils';
+
 interface MachineFaultsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -42,7 +44,8 @@ export const MachineFaultsModal: React.FC<MachineFaultsModalProps> = ({
   const machineFaults = faults.filter(
     (f) =>
       f.status !== 'Kapalı' &&
-      (f.machine.toLowerCase().includes(machineName.toLowerCase()) ||
+      (areLooseMatches(f.machine, machineName) ||
+        f.machine.toLowerCase().includes(machineName.toLowerCase()) ||
         machineName.toLowerCase().includes(f.machine.toLowerCase()))
   );
 

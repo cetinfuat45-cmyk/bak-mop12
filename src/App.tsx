@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import { Header } from './components/Header';
 import { FlowchartCanvas } from './components/FlowchartCanvas';
@@ -194,6 +194,17 @@ export default function App() {
   }, [currentOperator]);
 
   // Calculate daily stats for logged in operator
+  const availableMachines = useMemo(() => {
+    const list = new Set<string>();
+    faults.forEach((f) => {
+      if (f.machine) list.add(f.machine);
+    });
+    closedArchive.forEach((f) => {
+      if (f.machine) list.add(f.machine);
+    });
+    return Array.from(list);
+  }, [faults, closedArchive]);
+
   const getDailyStatsText = (): string => {
     if (!currentOperator) return '';
     const todayStr = new Date().toLocaleDateString('tr-TR');
@@ -437,18 +448,28 @@ export default function App() {
     helperMinutes?: Record<string, number>;
   }) => {
     if (!selectedFaultForIntervention) return;
+    const targetMachine = selectedFaultForIntervention.machine;
     const res = await cmmsService.closeFault(selectedFaultForIntervention.id, params);
+
+    // Close modals
+    setIsInterventionModalOpen(false);
+    setSelectedFaultForIntervention(null);
+    setIsMachineFaultsOpen(false);
+
     Swal.fire({
       icon: 'success',
-      title: '🎉 Arıza Kapatıldı & E-Tabloya Aktarıldı!',
+      title: '🎉 Arıza Kapatıldı!',
       text: res?.sheetsSynced
-        ? `${selectedFaultForIntervention.machine} arızası Google E-Tablo'ya aktarıldı ve veri tabanından silindi.`
-        : `${selectedFaultForIntervention.machine} arızası kapatıldı ve veri tabanından silindi.`,
-      timer: 2800,
+        ? `${targetMachine} arızası Google E-Tablo'ya aktarıldı. Operatör çıkışı yapıldı, sıradaki giriş bekleniyor.`
+        : `${targetMachine} arızası kapatıldı. Operatör çıkışı yapıldı, sıradaki giriş bekleniyor.`,
+      timer: 2200,
       showConfirmButton: false,
       background: '#0f172a',
       color: '#f8fafc'
     });
+
+    // Automatically log out operator so the next (or same) operator logs in again
+    handleLogout();
   };
 
   // Update status without closing (Parça Bekliyor, Devredildi, Arızadan Çıkma vb.)
@@ -458,6 +479,7 @@ export default function App() {
     minutes?: number
   ) => {
     if (!selectedFaultForIntervention) return;
+    const targetMachine = selectedFaultForIntervention.machine;
     await cmmsService.updateFaultStatus(
       selectedFaultForIntervention.id,
       status,
@@ -472,16 +494,29 @@ export default function App() {
         ? 'Parça Beklemeye Alındı'
         : status === 'Açık'
         ? 'Arızadan Çıkıldı (Açık)'
+        : status === 'Dış Servis Bekliyor'
+        ? 'Dış Servise Yönlendirildi'
+        : status === 'Geçici Çözüm'
+        ? 'Geçici Çözüm Sağlandı'
         : status;
+
+    // Close modals
+    setIsInterventionModalOpen(false);
+    setSelectedFaultForIntervention(null);
+    setIsMachineFaultsOpen(false);
+
     Swal.fire({
       icon: 'success',
       title: 'Müdahale Kaydı İşlendi',
-      text: `${selectedFaultForIntervention.machine}: [${label}] olarak güncellendi ve ${minutes || 0} dakikalık çalışma süreniz loglandı.`,
+      text: `${targetMachine}: [${label}] olarak güncellendi ve ${minutes || 0} dakikalık çalışma süreniz loglandı. Operatör çıkışı yapıldı.`,
       timer: 2200,
       showConfirmButton: false,
       background: '#0f172a',
       color: '#f8fafc'
     });
+
+    // Automatically log out operator so the next (or same) operator logs in again
+    handleLogout();
   };
 
   // Google Sheets Export (Sadece Kaydet, Ekranda Tut)
@@ -760,6 +795,7 @@ export default function App() {
             }}
             expectedMachine={targetScanFault?.machine}
             expectedMachineCode={targetScanFault?.machineCode}
+            availableMachines={availableMachines}
             onScanSuccess={handleQrScanSuccess}
           />
 

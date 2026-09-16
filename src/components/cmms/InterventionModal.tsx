@@ -424,6 +424,12 @@ export const InterventionModal: React.FC<InterventionModalProps> = ({
                     );
                   })}
                 </div>
+
+                {/* Auto-logout indicator */}
+                <div className="mt-2.5 p-2 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 animate-pulse" />
+                  <span>İşlem kaydedildiğinde ortak terminal güvenliği için operatör çıkışı yapılır ve PIN giriş ekranına dönülür.</span>
+                </div>
               </div>
 
               {/* If NOT Kapalı: Elapsed Minutes + Status note box + Past logs */}
@@ -799,14 +805,14 @@ export const InterventionModal: React.FC<InterventionModalProps> = ({
                   {submitting
                     ? 'Kaydediliyor...'
                     : targetStatus === 'Devredildi'
-                    ? 'Vardiyaya Devret & Süreyi Logla'
+                    ? 'Vardiyaya Devret & Çıkış Yap'
                     : targetStatus === 'Parça Bekliyor'
-                    ? 'Parça Beklemeye Al & Süreyi Logla'
+                    ? 'Parça Beklemeye Al & Çıkış Yap'
                     : targetStatus === 'Açık'
-                    ? 'Arızadan Çık & Süreyi Logla'
+                    ? 'Arızadan Çık & Çıkış Yap'
                     : targetStatus === 'Dış Servis Bekliyor'
-                    ? 'Dış Servise Devret & Logla'
-                    : 'Geçici Çözümü Kaydet & Logla'}
+                    ? 'Dış Servise Devret & Çıkış Yap'
+                    : 'Geçici Çözümü Kaydet & Çıkış Yap'}
                 </span>
               </button>
             ) : currentStep < 3 ? (
@@ -825,7 +831,7 @@ export const InterventionModal: React.FC<InterventionModalProps> = ({
                 className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold flex items-center gap-1.5 shadow-xl shadow-emerald-600/40 transition-all active:scale-95 text-xs"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>{submitting ? 'Kapatılıyor...' : 'Arızayı Kapat & Tamamla'}</span>
+                <span>{submitting ? 'Kapatılıyor...' : 'Arızayı Kapat & Çıkış Yap'}</span>
               </button>
             )}
           </div>

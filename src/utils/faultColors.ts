@@ -323,3 +323,22 @@ export function formatShortOperatorName(fullName?: string | null): string {
   const lastName = parts[parts.length - 1];
   return `${initials} ${lastName}`;
 }
+
+/**
+ * Formats a shift string cleanly for compact mobile displays.
+ * Example: "2.VARDİYA 08:00 // 16:00" -> "2. Vardiya"
+ * Example: "1. VARDİYA" -> "1. Vardiya"
+ */
+export function formatShortShift(shift?: string | null): string {
+  if (!shift) return '';
+  const trimmed = shift.trim();
+  const match = trimmed.match(/^(\d+)\.?\s*vard[ıi]ya/i);
+  if (match) {
+    return `${match[1]}. Vardiya`;
+  }
+  const firstWord = trimmed.split(/[\s/:]+/)[0];
+  if (firstWord && firstWord.length > 2) {
+    return firstWord;
+  }
+  return trimmed;
+}

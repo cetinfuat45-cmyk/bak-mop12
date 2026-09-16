@@ -11,7 +11,7 @@ import {
   Check
 } from 'lucide-react';
 import { Fault, Operator, ViewSettings } from '../../types';
-import { getFaultTypeConfig, formatShortOperatorName, cleanFaultTypeName } from '../../utils/faultColors';
+import { getFaultTypeConfig, formatShortOperatorName, formatShortShift, cleanFaultTypeName } from '../../utils/faultColors';
 
 interface FaultRowProps {
   fault: Fault;
@@ -66,59 +66,59 @@ export const FaultRow: React.FC<FaultRowProps> = ({
   const TypeIcon = typeConfig.icon;
 
   // Status visual badge
-  const renderStatusBadge = () => {
+  const renderStatusBadge = (compact: boolean = false) => {
     switch (fault.status) {
       case 'Müdahale Ediliyor':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-950 border border-emerald-500 text-emerald-300 shadow-sm">
+          <span className={`inline-flex items-center gap-1 ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-[11px]'} font-extrabold bg-emerald-950 border border-emerald-500 text-emerald-300 shadow-sm rounded-full`}>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-            <span>MÜDAHALE EDİLİYOR</span>
-            <span className="ml-1 text-[10px] font-mono text-amber-300 bg-amber-950/80 px-1 rounded border border-amber-700/60">
+            <span>{compact ? 'Müdahalede' : 'MÜDAHALE EDİLİYOR'}</span>
+            <span className="ml-0.5 text-[10px] font-mono text-amber-300 bg-amber-950/80 px-1 rounded border border-amber-700/60">
               {elapsedMinutes} dk
             </span>
           </span>
         );
       case 'Açık':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-950/90 border border-amber-600/80 text-amber-300">
+          <span className={`inline-flex items-center gap-1.5 ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-[11px]'} font-bold bg-amber-950/90 border border-amber-600/80 text-amber-300 rounded-full`}>
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             <span>MÜDAHALE BEKLİYOR</span>
           </span>
         );
       case 'Parça Bekliyor':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-950 border border-indigo-600 text-indigo-300">
+          <span className={`inline-flex items-center gap-1 ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]'} font-bold bg-indigo-950 border border-indigo-600 text-indigo-300 rounded-full`}>
             <span>PARÇA BEKLİYOR</span>
           </span>
         );
       case 'Devredildi':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-950 border border-purple-600 text-purple-300">
-            <span>VARDİYAYA DEVREDİLDİ</span>
+          <span className={`inline-flex items-center gap-1 ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]'} font-bold bg-purple-950 border border-purple-600 text-purple-300 rounded-full`}>
+            <span>{compact ? 'DEVREDİLDİ' : 'VARDİYAYA DEVREDİLDİ'}</span>
           </span>
         );
       case 'Dış Servis Bekliyor':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-orange-950 border border-orange-600 text-orange-300">
-            <span>DIŞ SERVİS BEKLİYOR</span>
+          <span className={`inline-flex items-center gap-1 ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]'} font-bold bg-orange-950 border border-orange-600 text-orange-300 rounded-full`}>
+            <span>{compact ? 'DIŞ SERVİS' : 'DIŞ SERVİS BEKLİYOR'}</span>
           </span>
         );
       case 'Geçici Çözüm':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-yellow-950 border border-yellow-600 text-yellow-300">
+          <span className={`inline-flex items-center gap-1 ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]'} font-bold bg-yellow-950 border border-yellow-600 text-yellow-300 rounded-full`}>
             <span>GEÇİCİ ÇÖZÜM</span>
           </span>
         );
       case 'Kapalı':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 border border-slate-700 text-slate-300">
+          <span className={`inline-flex items-center gap-1 ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]'} font-bold bg-slate-800 border border-slate-700 text-slate-300 rounded-full`}>
             <Check className="w-3 h-3 text-emerald-400" />
             <span>TAMAMLANDI</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 border border-slate-700 text-slate-300">
+          <span className={`inline-flex items-center gap-1 ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]'} font-bold bg-slate-800 border border-slate-700 text-slate-300 rounded-full`}>
             <span>{fault.status}</span>
           </span>
         );
@@ -127,7 +127,7 @@ export const FaultRow: React.FC<FaultRowProps> = ({
 
   return (
     <div
-      className={`group relative flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 sm:px-4 sm:py-3 rounded-xl border transition-all duration-150 hover:bg-slate-850/80 ${
+      className={`group relative rounded-xl border transition-all duration-150 hover:bg-slate-850/80 p-2.5 sm:p-3 lg:p-3 sm:px-4 ${
         fault.status === 'Müdahale Ediliyor'
           ? isAssignedToMe
             ? 'bg-slate-900/95 border-emerald-500/80 ring-1 ring-emerald-500/30'
@@ -139,249 +139,473 @@ export const FaultRow: React.FC<FaultRowProps> = ({
         borderLeftColor: typeConfig.color
       }}
     >
-      {/* Left: Type badge + Machine + Description */}
-      <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-2 md:gap-3.5">
-        {/* Type & Priority Badge (Hidden when grouped since header already shows fault type) */}
-        {(!hideTypeBadge || fault.priority === 'Acil') && (
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            {!hideTypeBadge && (
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-extrabold shadow-sm"
-                style={{
-                  borderColor: typeConfig.color,
-                  color: typeConfig.color === '#FF0000' ? '#FFFFFF' : '#0F172A',
-                  backgroundColor: typeConfig.color
-                }}
-              >
-                <TypeIcon className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate max-w-[120px]">
-                  {cleanFaultTypeName(typeConfig.shortName || typeConfig.name || fault.faultType)}
-                </span>
-              </span>
-            )}
-
-            {fault.priority === 'Acil' && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-rose-950 border border-rose-600 text-rose-300 animate-pulse flex-shrink-0">
-                ACİL
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Machine info - Colored in Group Color */}
-        <div className="flex items-center gap-2 min-w-[160px] max-w-[260px] flex-shrink-0">
-          {fault.machineCode && (
-            <span className="px-1.5 py-0.5 rounded text-[11px] font-mono font-bold bg-slate-800 border border-slate-700 text-cyan-300">
-              {fault.machineCode}
-            </span>
-          )}
-          <span
-            className="text-xs sm:text-sm font-black tracking-wide truncate drop-shadow-sm"
-            style={{ color: typeConfig.color }}
-            title={fault.machine}
-          >
-            {fault.machine}
-          </span>
-        </div>
-
-        {/* Description (controlled by viewSettings.showDescription) */}
-        {viewSettings.showDescription && (
-          <div className="flex-1 min-w-0 text-xs text-slate-300">
-            <span className="line-clamp-2 md:line-clamp-1 font-medium text-slate-200">
-              {fault.description || 'Açıklama belirtilmemiş.'}
-            </span>
-            {fault.interventions && fault.interventions.length > 0 && (
-              <div className="text-[10px] text-amber-300/90 flex items-center gap-1.5 truncate mt-0.5">
-                <span className="font-bold text-slate-400 uppercase">Son Durum:</span>
-                <span className="font-semibold text-cyan-300">
-                  {formatShortOperatorName(fault.interventions[fault.interventions.length - 1].operator)}
-                </span>
-                <span className="truncate text-slate-300">
-                  {fault.interventions[fault.interventions.length - 1].action}
-                </span>
-                <span className="px-1 rounded bg-slate-900 border border-slate-800 text-amber-300 font-bold shrink-0">
-                  {fault.interventions[fault.interventions.length - 1].minutes} dk
-                </span>
+      {/* ========================================================================= */}
+      {/* 📱 MOBILE & TABLET COMPACT LAYOUT (< lg) - HIGH DENSITY, ZERO WASTED SPACE */}
+      {/* ========================================================================= */}
+      <div className="flex flex-col gap-1.5 lg:hidden">
+        {/* Row 1: Header (Machine Title + Code + Priority + Compact Status Badge) */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+            {(!hideTypeBadge || fault.priority === 'Acil') && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {!hideTypeBadge && (
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold shadow-sm"
+                    style={{
+                      borderColor: typeConfig.color,
+                      color: typeConfig.color === '#FF0000' ? '#FFFFFF' : '#0F172A',
+                      backgroundColor: typeConfig.color
+                    }}
+                  >
+                    <TypeIcon className="w-2.5 h-2.5 flex-shrink-0" />
+                    <span className="truncate max-w-[80px]">
+                      {cleanFaultTypeName(typeConfig.shortName || typeConfig.name || fault.faultType)}
+                    </span>
+                  </span>
+                )}
+                {fault.priority === 'Acil' && (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-950 border border-rose-600 text-rose-300 animate-pulse flex-shrink-0">
+                    ACİL
+                  </span>
+                )}
               </div>
             )}
-          </div>
-        )}
-      </div>
 
-      {/* Middle: Reporter, Shift, Date info */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400 flex-shrink-0">
-        {viewSettings.showReporter && (
-          <div className="flex items-center gap-1">
-            <span className="text-slate-500">Bildiren:</span>
-            <span className="font-semibold text-slate-200 truncate max-w-[110px]" title={fault.reportedBy}>
-              {formatShortOperatorName(fault.reportedBy) || fault.reportedBy}
+            {fault.machineCode && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 border border-slate-700 text-cyan-300 shrink-0">
+                {fault.machineCode}
+              </span>
+            )}
+
+            <span
+              className="text-xs sm:text-sm font-black tracking-wide truncate drop-shadow-sm"
+              style={{ color: typeConfig.color }}
+              title={fault.machine}
+            >
+              {fault.machine}
             </span>
           </div>
-        )}
 
-        {viewSettings.showShift && fault.shift && (
-          <div className="flex items-center gap-1">
-            <span className="text-slate-500">Vardiya:</span>
-            <span className="font-medium text-slate-300 px-1 py-0.2 rounded bg-slate-800 border border-slate-700 text-[10px]">
-              {fault.shift}
-            </span>
+          <div className="shrink-0">
+            {renderStatusBadge(true)}
           </div>
-        )}
-
-        <div className="flex items-center gap-1 text-slate-500 hidden sm:flex">
-          <Calendar className="w-3 h-3 text-slate-500" />
-          <span>{fault.reportedAt || fault.date}</span>
         </div>
-      </div>
 
-      {/* Right-Middle: Status & Assigned Tech */}
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {renderStatusBadge()}
+        {/* Row 2: Description & Quick Meta Chips (Single sleek strip) */}
+        <div className="space-y-1">
+          {viewSettings.showDescription && (
+            <p className="text-slate-200 line-clamp-1 font-medium text-[11px] leading-snug">
+              {fault.description || 'Açıklama belirtilmemiş.'}
+            </p>
+          )}
 
-        {/* Assigned Operator (controlled by viewSettings.showAssignee) */}
-        {viewSettings.showAssignee && (
-          <div className="flex items-center gap-1.5">
-            {fault.assignedTo ? (
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] text-slate-400">
+            {viewSettings.showReporter && fault.reportedBy && (
+              <span className="flex items-center gap-1">
+                <span className="text-slate-500">Bildiren:</span>
+                <span className="font-semibold text-slate-300">
+                  {formatShortOperatorName(fault.reportedBy) || fault.reportedBy}
+                </span>
+              </span>
+            )}
+
+            {viewSettings.showShift && fault.shift && (
+              <span className="flex items-center gap-1">
+                <span className="text-slate-500">Vardiya:</span>
+                <span className="font-medium text-slate-300 px-1 py-0.2 rounded bg-slate-800/80 border border-slate-700/80 text-[10px]">
+                  {formatShortShift(fault.shift)}
+                </span>
+              </span>
+            )}
+
+            <span className="text-slate-500 flex items-center gap-1">
+              <Calendar className="w-2.5 h-2.5" />
+              <span>{fault.reportedAt || fault.date}</span>
+            </span>
+
+            {/* If there's an intervention log note, show a subtle 1-line hint */}
+            {fault.interventions && fault.interventions.length > 0 && (
+              <span className="text-[10px] text-amber-300/90 truncate flex items-center gap-1">
+                <span className="text-slate-500">Son:</span>
+                <span className="font-bold text-cyan-300">{formatShortOperatorName(fault.interventions[fault.interventions.length - 1].operator)}</span>
+                <span className="text-slate-400">({fault.interventions[fault.interventions.length - 1].minutes} dk)</span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Row 3: Operator Assignment & Action Buttons */}
+        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/60">
+          {/* Left: Assigned operator tag or Admin select */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            {isAdmin && (
+              <select
+                value={fault.assignedTo || ''}
+                onChange={(e) => onReassign(fault, e.target.value)}
+                className="bg-slate-950 border border-slate-700 text-slate-300 text-[10px] rounded-lg px-2 py-0.5 outline-none hover:border-slate-500 max-w-[110px]"
+                title="Operatör Ata / Değiştir"
+              >
+                <option value="">Ata...</option>
+                {allOperators.map((op, opIdx) => (
+                  <option key={`row-op-m-${op.name}-${opIdx}`} value={op.name}>
+                    {op.shortName || op.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Tech tag if assigned */}
+            {viewSettings.showAssignee && fault.assignedTo ? (
               <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all truncate ${
                   fault.status === 'Müdahale Ediliyor'
                     ? isAssignedToMe
-                      ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500/40 shadow-sm'
+                      ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500/40'
                       : 'bg-emerald-950/50 border-emerald-600/70 text-emerald-300'
                     : isAssignedToMe
                     ? 'bg-cyan-950 border-cyan-500 text-cyan-300'
-                    : 'bg-slate-950 border-slate-700 text-slate-200'
+                    : 'bg-slate-950 border-slate-700 text-slate-300'
                 }`}
-                title={`Müdahale Eden / Görevli: ${fault.assignedTo}${
-                  fault.helpers && fault.helpers.length > 0
-                    ? ` | Yardımcılar: ${fault.helpers.join(', ')}`
-                    : ''
-                }`}
+                title={`Görevli: ${fault.assignedTo}`}
               >
-                <User className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="font-extrabold tracking-tight">
-                  {formatShortOperatorName(fault.assignedTo)}
-                </span>
-
-                {/* Active Helpers with abbreviated names (e.g. +E. Vardar) */}
+                <User className="w-2.5 h-2.5 text-cyan-400 shrink-0" />
+                <span className="truncate">{formatShortOperatorName(fault.assignedTo)}</span>
                 {fault.helpers && fault.helpers.length > 0 && (
-                  <span
-                    className="text-[10px] text-cyan-300 bg-cyan-950/90 border border-cyan-800 px-1 py-0.2 rounded font-semibold ml-0.5"
-                    title={`Aktif Yardımcılar: ${fault.helpers.join(', ')}`}
-                  >
-                    +{fault.helpers.map((h) => formatShortOperatorName(h)).join(', ')}
+                  <span className="text-cyan-300 font-semibold ml-0.5">
+                    +{fault.helpers.length}
                   </span>
                 )}
-
-                {/* Finished Helper Interventions (e.g. ✓ E. Vardar 15 dk) */}
-                {fault.interventions &&
-                  fault.interventions.filter((i) => i.role === 'helper' && i.operator).length > 0 && (
-                    <span
-                      className="text-[10px] text-emerald-300 bg-emerald-950/90 border border-emerald-800/80 px-1 py-0.2 rounded font-semibold ml-0.5"
-                      title="Yardım Süresi Kaydedildi"
-                    >
-                      {fault.interventions
-                        .filter((i) => i.role === 'helper' && i.operator)
-                        .map((i) => `✓ ${formatShortOperatorName(i.operator)} (${i.minutes} dk)`)
-                        .join(' ')}
-                    </span>
-                  )}
               </span>
             ) : (
-              <span className="text-[11px] text-slate-500 italic px-2 py-0.5 rounded bg-slate-950/60 border border-slate-800">
-                Boşta
-              </span>
+              !isAdmin && viewSettings.showAssignee && (
+                <span className="text-[10px] text-slate-500 italic px-1.5 py-0.5 rounded bg-slate-950/60 border border-slate-800">
+                  Boşta
+                </span>
+              )
             )}
           </div>
-        )}
-      </div>
 
-      {/* Far-Right: Action buttons */}
-      <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto lg:ml-0">
-        {/* Admin Reassign dropdown */}
-        {isAdmin && (
-          <select
-            value={fault.assignedTo || ''}
-            onChange={(e) => onReassign(fault, e.target.value)}
-            className="bg-slate-950 border border-slate-700 text-slate-300 text-[11px] rounded-lg px-1.5 py-1 outline-none hover:border-slate-500 max-w-[110px]"
-            title="Operatör Ata / Değiştir"
-          >
-            <option value="">Ata...</option>
-            {allOperators.map((op, opIdx) => (
-              <option key={`row-op-${op.name}-${opIdx}`} value={op.name}>
-                {op.shortName || op.name}
-              </option>
-            ))}
-          </select>
-        )}
-
-        {/* Admin Quick Intervention trigger */}
-        {isAdmin && fault.status !== 'Müdahale Ediliyor' && (
-          <button
-            onClick={() => onOpenInterventionModal(fault)}
-            className="p-1.5 rounded-lg bg-slate-950 border border-slate-700 hover:bg-slate-800 text-slate-300 text-xs transition-all"
-            title="Yönetici Olarak Durumu Güncelle veya Kapat"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-          </button>
-        )}
-
-        {/* Start button */}
-        {(fault.status === 'Açık' ||
-          fault.status === 'Parça Bekliyor' ||
-          fault.status === 'Dış Servis Bekliyor' ||
-          fault.status === 'Devredildi' ||
-          fault.status === 'Geçici Çözüm') && (
-          <button
-            onClick={() => onStartIntervention(fault)}
-            className="flex items-center gap-1 px-3 py-1 rounded-lg font-bold text-xs text-white bg-cyan-600 hover:bg-cyan-500 shadow-sm transition-all active:scale-95 whitespace-nowrap"
-          >
-            <Play className="w-3 h-3 fill-current" />
-            <span>
-              {fault.status === 'Dış Servis Bekliyor'
-                ? 'Servis Devam'
-                : fault.status === 'Parça Bekliyor'
-                ? 'Parça Devral'
-                : fault.status === 'Devredildi'
-                ? 'Devral'
-                : 'Başla'}
-            </span>
-          </button>
-        )}
-
-        {/* Finish button if assigned to me and active */}
-        {fault.status === 'Müdahale Ediliyor' && isAssignedToMe && (
-          <button
-            onClick={() => onOpenInterventionModal(fault)}
-            className="flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all active:scale-95 whitespace-nowrap"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Bitir / Güncelle</span>
-          </button>
-        )}
-
-        {/* Helper buttons */}
-        {fault.status === 'Müdahale Ediliyor' && !isAssignedToMe && (
-          <>
-            {isHelper ? (
+          {/* Right: Quick Action Buttons */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Admin quick intervention modal trigger */}
+            {isAdmin && fault.status !== 'Müdahale Ediliyor' && (
               <button
-                onClick={() => onLeaveHelper(fault)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition-all active:scale-95 whitespace-nowrap"
+                onClick={() => onOpenInterventionModal(fault)}
+                className="p-1 rounded-lg bg-slate-950 border border-slate-700 hover:bg-slate-800 text-slate-300 transition-all"
+                title="Yönetici Olarak Durumu Güncelle veya Kapat"
               >
-                <UserMinus className="w-3 h-3" />
-                <span>Ayrıl</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => onJoinHelper(fault)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-white font-semibold text-xs transition-all active:scale-95 whitespace-nowrap"
-              >
-                <UserPlus className="w-3 h-3" />
-                <span>Yardımcı Ol</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               </button>
             )}
-          </>
-        )}
+
+            {/* Start Button */}
+            {(fault.status === 'Açık' ||
+              fault.status === 'Parça Bekliyor' ||
+              fault.status === 'Dış Servis Bekliyor' ||
+              fault.status === 'Devredildi' ||
+              fault.status === 'Geçici Çözüm') && (
+              <button
+                onClick={() => onStartIntervention(fault)}
+                className="flex items-center gap-1 px-3 py-1 rounded-lg font-bold text-xs text-white bg-cyan-600 hover:bg-cyan-500 shadow-sm transition-all active:scale-95 whitespace-nowrap"
+              >
+                <Play className="w-3 h-3 fill-current" />
+                <span>
+                  {fault.status === 'Dış Servis Bekliyor'
+                    ? 'Servis Devam'
+                    : fault.status === 'Parça Bekliyor'
+                    ? 'Parça Devral'
+                    : fault.status === 'Devredildi'
+                    ? 'Devral'
+                    : 'Başla'}
+                </span>
+              </button>
+            )}
+
+            {/* Finish button if assigned to me and active */}
+            {fault.status === 'Müdahale Ediliyor' && isAssignedToMe && (
+              <button
+                onClick={() => onOpenInterventionModal(fault)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all active:scale-95 whitespace-nowrap"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Bitir</span>
+              </button>
+            )}
+
+            {/* Helper buttons */}
+            {fault.status === 'Müdahale Ediliyor' && !isAssignedToMe && (
+              <>
+                {isHelper ? (
+                  <button
+                    onClick={() => onLeaveHelper(fault)}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition-all active:scale-95 whitespace-nowrap"
+                  >
+                    <UserMinus className="w-3 h-3" />
+                    <span>Ayrıl</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onJoinHelper(fault)}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-white font-semibold text-xs transition-all active:scale-95 whitespace-nowrap"
+                  >
+                    <UserPlus className="w-3 h-3" />
+                    <span>Yardım</span>
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 🖥️ DESKTOP LAYOUT (lg:flex) - SLEEK HORIZONTAL DATA ROW                    */}
+      {/* ========================================================================= */}
+      <div className="hidden lg:flex items-center justify-between gap-3 w-full">
+        {/* Left: Type badge + Machine + Description */}
+        <div className="flex-1 min-w-0 flex items-center gap-3.5">
+          {/* Type & Priority Badge (Hidden when grouped since header already shows fault type) */}
+          {(!hideTypeBadge || fault.priority === 'Acil') && (
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {!hideTypeBadge && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-extrabold shadow-sm"
+                  style={{
+                    borderColor: typeConfig.color,
+                    color: typeConfig.color === '#FF0000' ? '#FFFFFF' : '#0F172A',
+                    backgroundColor: typeConfig.color
+                  }}
+                >
+                  <TypeIcon className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate max-w-[120px]">
+                    {cleanFaultTypeName(typeConfig.shortName || typeConfig.name || fault.faultType)}
+                  </span>
+                </span>
+              )}
+
+              {fault.priority === 'Acil' && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-rose-950 border border-rose-600 text-rose-300 animate-pulse flex-shrink-0">
+                  ACİL
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Machine info - Colored in Group Color */}
+          <div className="flex items-center gap-2 min-w-[160px] max-w-[260px] flex-shrink-0">
+            {fault.machineCode && (
+              <span className="px-1.5 py-0.5 rounded text-[11px] font-mono font-bold bg-slate-800 border border-slate-700 text-cyan-300">
+                {fault.machineCode}
+              </span>
+            )}
+            <span
+              className="text-xs sm:text-sm font-black tracking-wide truncate drop-shadow-sm"
+              style={{ color: typeConfig.color }}
+              title={fault.machine}
+            >
+              {fault.machine}
+            </span>
+          </div>
+
+          {/* Description (controlled by viewSettings.showDescription) */}
+          {viewSettings.showDescription && (
+            <div className="flex-1 min-w-0 text-xs text-slate-300">
+              <span className="line-clamp-1 font-medium text-slate-200">
+                {fault.description || 'Açıklama belirtilmemiş.'}
+              </span>
+              {fault.interventions && fault.interventions.length > 0 && (
+                <div className="text-[10px] text-amber-300/90 flex items-center gap-1.5 truncate mt-0.5">
+                  <span className="font-bold text-slate-400 uppercase">Son Durum:</span>
+                  <span className="font-semibold text-cyan-300">
+                    {formatShortOperatorName(fault.interventions[fault.interventions.length - 1].operator)}
+                  </span>
+                  <span className="truncate text-slate-300">
+                    {fault.interventions[fault.interventions.length - 1].action}
+                  </span>
+                  <span className="px-1 rounded bg-slate-900 border border-slate-800 text-amber-300 font-bold shrink-0">
+                    {fault.interventions[fault.interventions.length - 1].minutes} dk
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Middle: Reporter, Shift, Date info */}
+        <div className="flex items-center gap-x-3 gap-y-1 text-[11px] text-slate-400 flex-shrink-0">
+          {viewSettings.showReporter && (
+            <div className="flex items-center gap-1">
+              <span className="text-slate-500">Bildiren:</span>
+              <span className="font-semibold text-slate-200 truncate max-w-[110px]" title={fault.reportedBy}>
+                {formatShortOperatorName(fault.reportedBy) || fault.reportedBy}
+              </span>
+            </div>
+          )}
+
+          {viewSettings.showShift && fault.shift && (
+            <div className="flex items-center gap-1">
+              <span className="text-slate-500">Vardiya:</span>
+              <span className="font-medium text-slate-300 px-1 py-0.2 rounded bg-slate-800 border border-slate-700 text-[10px]">
+                {formatShortShift(fault.shift)}
+              </span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-1 text-slate-500">
+            <Calendar className="w-3 h-3 text-slate-500" />
+            <span>{fault.reportedAt || fault.date}</span>
+          </div>
+        </div>
+
+        {/* Right-Middle: Status & Assigned Tech */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {renderStatusBadge(false)}
+
+          {/* Assigned Operator (controlled by viewSettings.showAssignee) */}
+          {viewSettings.showAssignee && (
+            <div className="flex items-center gap-1.5">
+              {fault.assignedTo ? (
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                    fault.status === 'Müdahale Ediliyor'
+                      ? isAssignedToMe
+                        ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500/40 shadow-sm'
+                        : 'bg-emerald-950/50 border-emerald-600/70 text-emerald-300'
+                      : isAssignedToMe
+                      ? 'bg-cyan-950 border-cyan-500 text-cyan-300'
+                      : 'bg-slate-950 border-slate-700 text-slate-200'
+                  }`}
+                  title={`Müdahale Eden / Görevli: ${fault.assignedTo}${
+                    fault.helpers && fault.helpers.length > 0
+                      ? ` | Yardımcılar: ${fault.helpers.join(', ')}`
+                      : ''
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="font-extrabold tracking-tight">
+                    {formatShortOperatorName(fault.assignedTo)}
+                  </span>
+
+                  {/* Active Helpers with abbreviated names (e.g. +E. Vardar) */}
+                  {fault.helpers && fault.helpers.length > 0 && (
+                    <span
+                      className="text-[10px] text-cyan-300 bg-cyan-950/90 border border-cyan-800 px-1 py-0.2 rounded font-semibold ml-0.5"
+                      title={`Aktif Yardımcılar: ${fault.helpers.join(', ')}`}
+                    >
+                      +{fault.helpers.map((h) => formatShortOperatorName(h)).join(', ')}
+                    </span>
+                  )}
+
+                  {/* Finished Helper Interventions */}
+                  {fault.interventions &&
+                    fault.interventions.filter((i) => i.role === 'helper' && i.operator).length > 0 && (
+                      <span
+                        className="text-[10px] text-emerald-300 bg-emerald-950/90 border border-emerald-800/80 px-1 py-0.2 rounded font-semibold ml-0.5"
+                        title="Yardım Süresi Kaydedildi"
+                      >
+                        {fault.interventions
+                          .filter((i) => i.role === 'helper' && i.operator)
+                          .map((i) => `✓ ${formatShortOperatorName(i.operator)} (${i.minutes} dk)`)
+                          .join(' ')}
+                      </span>
+                    )}
+                </span>
+              ) : (
+                <span className="text-[11px] text-slate-500 italic px-2 py-0.5 rounded bg-slate-950/60 border border-slate-800">
+                  Boşta
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Far-Right: Action buttons */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Admin Reassign dropdown */}
+          {isAdmin && (
+            <select
+              value={fault.assignedTo || ''}
+              onChange={(e) => onReassign(fault, e.target.value)}
+              className="bg-slate-950 border border-slate-700 text-slate-300 text-[11px] rounded-lg px-1.5 py-1 outline-none hover:border-slate-500 max-w-[110px]"
+              title="Operatör Ata / Değiştir"
+            >
+              <option value="">Ata...</option>
+              {allOperators.map((op, opIdx) => (
+                <option key={`row-op-d-${op.name}-${opIdx}`} value={op.name}>
+                  {op.shortName || op.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Admin Quick Intervention trigger */}
+          {isAdmin && fault.status !== 'Müdahale Ediliyor' && (
+            <button
+              onClick={() => onOpenInterventionModal(fault)}
+              className="p-1.5 rounded-lg bg-slate-950 border border-slate-700 hover:bg-slate-800 text-slate-300 text-xs transition-all"
+              title="Yönetici Olarak Durumu Güncelle veya Kapat"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            </button>
+          )}
+
+          {/* Start button */}
+          {(fault.status === 'Açık' ||
+            fault.status === 'Parça Bekliyor' ||
+            fault.status === 'Dış Servis Bekliyor' ||
+            fault.status === 'Devredildi' ||
+            fault.status === 'Geçici Çözüm') && (
+            <button
+              onClick={() => onStartIntervention(fault)}
+              className="flex items-center gap-1 px-3 py-1 rounded-lg font-bold text-xs text-white bg-cyan-600 hover:bg-cyan-500 shadow-sm transition-all active:scale-95 whitespace-nowrap"
+            >
+              <Play className="w-3 h-3 fill-current" />
+              <span>
+                {fault.status === 'Dış Servis Bekliyor'
+                  ? 'Servis Devam'
+                  : fault.status === 'Parça Bekliyor'
+                  ? 'Parça Devral'
+                  : fault.status === 'Devredildi'
+                  ? 'Devral'
+                  : 'Başla'}
+              </span>
+            </button>
+          )}
+
+          {/* Finish button if assigned to me and active */}
+          {fault.status === 'Müdahale Ediliyor' && isAssignedToMe && (
+            <button
+              onClick={() => onOpenInterventionModal(fault)}
+              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all active:scale-95 whitespace-nowrap"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Bitir / Güncelle</span>
+            </button>
+          )}
+
+          {/* Helper buttons */}
+          {fault.status === 'Müdahale Ediliyor' && !isAssignedToMe && (
+            <>
+              {isHelper ? (
+                <button
+                  onClick={() => onLeaveHelper(fault)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition-all active:scale-95 whitespace-nowrap"
+                >
+                  <UserMinus className="w-3 h-3" />
+                  <span>Ayrıl</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => onJoinHelper(fault)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-white font-semibold text-xs transition-all active:scale-95 whitespace-nowrap"
+                >
+                  <UserPlus className="w-3 h-3" />
+                  <span>Yardımcı Ol</span>
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
