@@ -1,1 +1,51 @@
-if(!self.define){let e,i={};const n=(n,r)=>(n=new URL(n+".js",r).href,i[n]||new Promise(i=>{if("document"in self){const e=document.createElement("script");e.src=n,e.onload=i,document.head.appendChild(e)}else e=n,importScripts(n),i()}).then(()=>{let e=i[n];if(!e)throw new Error(`Module ${n} didn’t register its module`);return e}));self.define=(r,c)=>{const s=e||("document"in self?document.currentScript.src:"")||location.href;if(i[s])return;let a={};const o=e=>n(e,s),d={module:{uri:s},exports:a,require:o};i[s]=Promise.all(r.map(e=>d[e]||o(e))).then(e=>(c(...e),a))}}define(["./workbox-0bb07689"],function(e){"use strict";self.skipWaiting(),e.clientsClaim(),e.precacheAndRoute([{url:"registerSW.js",revision:"402b66900e731ca748771b6fc5e7a068"},{url:"pwa-maskable-512x512.png",revision:"4e612035c513e04539390728e802267c"},{url:"pwa-512x512.png",revision:"d990cd2c6919d0a308dd0336f79ad578"},{url:"pwa-192x192.png",revision:"31aeb7b747a23ceee68dc19401a9ba1c"},{url:"index.html",revision:"153e15ae80e9da861420bc500ca83f16"},{url:"icon.svg",revision:"8646c1903fc3ede6a5733ca83ab1be9d"},{url:"favicon.png",revision:"00f0c27215be2551374f4e3db3844b9b"},{url:"apple-touch-icon.png",revision:"a94c38657b0febc0866f9a18f01339ad"},{url:"404.html",revision:"5f21362c0d41e3f45493187e3cc1a8c4"},{url:"assets/index-WFbQng7D.css",revision:null},{url:"assets/index-BeLdv3DY.js",revision:null},{url:"apple-touch-icon.png",revision:"a94c38657b0febc0866f9a18f01339ad"},{url:"favicon.png",revision:"00f0c27215be2551374f4e3db3844b9b"},{url:"icon.svg",revision:"8646c1903fc3ede6a5733ca83ab1be9d"},{url:"pwa-192x192.png",revision:"31aeb7b747a23ceee68dc19401a9ba1c"},{url:"pwa-512x512.png",revision:"d990cd2c6919d0a308dd0336f79ad578"},{url:"pwa-maskable-512x512.png",revision:"4e612035c513e04539390728e802267c"},{url:"manifest.webmanifest",revision:"dabe85904e395f2f8e519464dada9478"}],{}),e.cleanupOutdatedCaches()});
+const CACHE_NAME = 'akg-bakim-v4.0.4';
+const ASSETS_TO_CACHE = [
+    './',
+    './index.html',
+    './style.css',
+    './app.js',
+    './manifest.json',
+    './weekly_report.js',
+    './AKGLOG.png',
+    'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+];
+
+// Service Worker Yükleme (Install) - Dosyaları Önbelleğe Al
+self.addEventListener('install', event => {
+    self.skipWaiting(); // YENİ EKLENDİ: Beklemeyi atla ve anında aktif ol!
+    event.waitUntil(
+        caches.open(CACHE_NAME).then(cache => {
+            console.log('Önbellek (Cache) başarıyla açıldı.');
+            return cache.addAll(ASSETS_TO_CACHE);
+        })
+    );
+});
+
+// Eski Önbellekleri Temizleme (Activate)
+self.addEventListener('activate', event => {
+    event.waitUntil(
+        caches.keys().then(keys => {
+            return Promise.all(keys.map(key => {
+                if (key !== CACHE_NAME) {
+                    console.log('Eski önbellek siliniyor:', key);
+                    return caches.delete(key);
+                }
+            }));
+        }).then(() => self.clients.claim()) // YENİ EKLENDİ: Tüm istemcileri (sekmeleri) anında kontrol altına al
+    );
+});
+
+// Ağa İstek Atarken (Fetch) - Önce interneti dene, yoksa önbellekten getir (Network-First Cache)
+self.addEventListener('fetch', event => {
+    // Sadece GET isteklerini yakala ve Firebase / Google API dışındakiler için çalıştır
+    if (event.request.method !== 'GET' || event.request.url.includes('firestore') || event.request.url.includes('google')) {
+        return;
+    }
+
+    event.respondWith(
+        fetch(event.request).catch(() => {
+            return caches.match(event.request);
+        })
+    );
+});
+

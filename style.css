@@ -1,0 +1,536 @@
+:root {
+    --bg-color: #0f172a;
+    --surface-color: #1e293b;
+    --surface-light: #334155;
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #475569;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* HEADER */
+.header {
+    background-color: var(--surface-color);
+    padding: 1rem;
+    text-align: center;
+    border-bottom: 2px solid var(--primary);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: white;
+}
+
+.header #user-info {
+    margin: 0;
+    margin-top: 0.3rem;
+    color: var(--warning);
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+/* CONTAINER */
+.container {
+    padding: 1rem;
+    flex: 1;
+    max-width: 1200px; /* Tabletlerde tam ekran olması için genişletildi */
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* LOGIN SCREEN */
+#login-screen {
+    display: none;
+}
+#login-screen.active {
+    display: flex;
+}
+
+.login-card {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 3rem 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.login-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.6));
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.pin-input {
+    width: 100%;
+    padding: 1.2rem;
+    font-size: 2rem;
+    text-align: center;
+    letter-spacing: 15px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 2px solid rgba(255,255,255,0.1);
+    color: var(--primary);
+    font-weight: bold;
+    border-radius: 12px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.pin-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+    background: rgba(15, 23, 42, 0.9);
+}
+
+.pin-input::placeholder {
+    font-size: 1rem;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    font-weight: normal;
+}
+
+.login-submit-btn {
+    width: 100%;
+    padding: 1.2rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+    transition: all 0.3s ease;
+    margin-top: 1.5rem;
+    letter-spacing: 1px;
+}
+
+.login-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6);
+}
+
+.login-submit-btn:active {
+    transform: translateY(1px);
+}
+
+.btn-primary {
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    max-width: 250px;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    transition: transform 0.1s, background 0.3s;
+}
+
+.btn-primary:active {
+    transform: scale(0.95);
+    background: var(--primary-dark);
+}
+
+/* DASHBOARD SCREEN */
+#dashboard-screen {
+    display: none;
+}
+
+.btn-scan {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 1.5rem;
+    font-size: 1.3rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+}
+
+.section-title {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* FAULT CARDS */
+.fault-card {
+    background: var(--surface-color);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.fault-card.status-bekliyor {
+    border-left-color: var(--danger);
+}
+
+.fault-card.status-devam {
+    border-left-color: var(--warning);
+}
+
+.fault-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.machine-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: white;
+}
+
+.fault-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.fault-desc {
+    font-size: 0.95rem;
+    color: var(--text-main);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+.active-ops {
+    background: var(--bg-color);
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: var(--success);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* CARD BUTTONS */
+.card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.btn-action {
+    padding: 0.8rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.btn-finish { background: var(--success); grid-column: span 2; }
+.btn-wait { background: var(--danger); }
+.btn-leave { background: var(--surface-light); border: 1px solid var(--border-color); }
+.btn-join { background: var(--primary); grid-column: span 2; }
+
+/* MODALS */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.95); /* Çok koyu arka plan, dikkat dağınıklığı olmasın */
+    backdrop-filter: blur(5px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 1rem;
+}
+
+.qr-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 500px;
+}
+
+.modal-content {
+    background: rgba(30, 41, 59, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.modal-title {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+    font-size: 1.25rem;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: white;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+textarea.form-control {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn-cancel {
+    flex: 1;
+    padding: 0.8rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-save {
+    flex: 1;
+    padding: 0.8rem;
+    background: var(--primary);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* LOADER */
+.loader-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+.loader-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--surface-light);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+
+/* === PWA VE MOBİL UYUM (iOS & ANDROID) === */
+body {
+    /* Metinlerin yanlışlıkla seçilmesini engeller (Uygulama hissi verir) */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none; /* iOS'ta uzun basınca çıkan menüyü engeller */
+    
+    /* iOS çentik ve alt çizgi (Home Indicator) için güvenli alan */
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-top: env(safe-area-inset-top);
+}
+
+/* Sadece input alanlarında metin seçimine ve yazmaya izin ver */
+input, textarea, select {
+    -webkit-user-select: auto;
+    user-select: auto;
+}
+
+/* Tüm tıklanabilir butonlar için dokunma iyileştirmesi */
+button, .fault-card, tr, select {
+    /* Çift tıklayıp yakınlaştırmayı engeller, tıklama gecikmesini (300ms) kaldırır */
+    touch-action: manipulation;
+    /* Tıklama sırasındaki mavi gölge efektini (highlight) kaldırır */
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Kompakt Kart Görünümü */
+.fault-card.compact {
+    padding: 0.6rem 0.8rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+.fault-card.compact .fault-header {
+    width: 100%;
+    margin-bottom: 2px;
+}
+.fault-card.compact .fault-header h3 {
+    font-size: 0.95rem;
+}
+.fault-card.compact .fault-details {
+    font-size: 0.8rem;
+    margin: 0;
+    margin-right: 10px;
+}
+.fault-card.compact .fault-status {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+    margin-top: 2px;
+}
+
+/* Açılır-Kapanır Liste (Akordeon) Görünümü */
+.fault-card.accordion {
+    padding: 0.6rem 0.8rem;
+}
+.fault-card.accordion .fault-header {
+    margin-bottom: 0.2rem;
+}
+.fault-card.accordion .fault-details {
+    display: none;
+}
+.fault-card.accordion .fault-status {
+    margin-top: 0;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+    display: inline-block;
+}
+.fault-card.accordion::after {
+    content: "▼ Detay ve Müdahale İçin Dokun";
+    display: block;
+    font-size: 0.7rem;
+    color: var(--primary);
+    margin-top: 5px;
+    text-align: right;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+
+
+/* V4.0.4 - Arıza yazı renkleri görünüm ve tema ayarlarından bağımsızdır. */
+.fault-fixed-light,
+.fault-fixed-light td,
+.fault-fixed-light .machine-name,
+.fault-fixed-light .fault-details,
+.fault-fixed-light .fault-date,
+.fault-fixed-light .reporter-info,
+.fault-fixed-light .assigned-info,
+.fault-fixed-light .helper-info,
+.fault-fixed-light strong,
+.fault-fixed-light span:not(.neon-border-green) {
+    color: #000000 !important;
+    text-shadow: none !important;
+}
+.fault-fixed-dark,
+.fault-fixed-dark td,
+.fault-fixed-dark .machine-name,
+.fault-fixed-dark .fault-details,
+.fault-fixed-dark .fault-date,
+.fault-fixed-dark .reporter-info,
+.fault-fixed-dark .assigned-info,
+.fault-fixed-dark .helper-info,
+.fault-fixed-dark strong,
+.fault-fixed-dark span:not(.neon-border-green) {
+    color: #ffffff !important;
+    text-shadow: 0 1px 1px rgba(0,0,0,.45) !important;
+}
+.fault-fixed-light .fault-status,
+.fault-fixed-dark .fault-status {
+    background: rgba(245,158,11,.88) !important;
+    color: #000000 !important;
+    font-weight: 800 !important;
+    text-shadow: none !important;
+}
+.fault-group-header {
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    background: #0b1628 !important;
+    padding: .55rem .8rem !important;
+    border-left-width: 5px !important;
+}
+
+
+/* V4.0.6 - Ariza turu grup renklerinde sabit siyah metin */
+.fault-fixed-light, .fault-fixed-light *, .fault-card.fault-fixed-light,
+.fault-row.fault-fixed-light, .mini-fault-card.fault-fixed-light,
+.accordion-item.fault-fixed-light { color:#000000 !important; }
