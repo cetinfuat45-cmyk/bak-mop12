@@ -1392,8 +1392,20 @@ function openFaultSelectionModal(faults) {
         machineNameEl.innerHTML = `🏭 ${faults[0].machine || 'Bilinmeyen Makine'}`;
     }
     
+    // V4.1.6: Aktif müdahale bulunan arızaları modalın en üstüne taşı.
+    const sortedFaults = faults.map((fault, originalIndex) => ({ fault, originalIndex }))
+        .sort((a, b) => {
+            const aActive = (a.fault.status === 'Müdahale Ediliyor') || !!a.fault.assignedTo ||
+                (Array.isArray(a.fault.helpers) && a.fault.helpers.length > 0);
+            const bActive = (b.fault.status === 'Müdahale Ediliyor') || !!b.fault.assignedTo ||
+                (Array.isArray(b.fault.helpers) && b.fault.helpers.length > 0);
+            if (aActive !== bActive) return bActive - aActive;
+            return a.originalIndex - b.originalIndex;
+        })
+        .map(item => item.fault);
+
     // Her bir arıza için bir seçim butonu/kartı oluştur
-    faults.forEach(fault => {
+    sortedFaults.forEach(fault => {
         // Arıza Türüne Göre Renk Belirleme (Ana paneldekiyle aynı renkler)
         let bg = "rgba(255,255,255,0.05)";
         let txtColor = "var(--primary)";
