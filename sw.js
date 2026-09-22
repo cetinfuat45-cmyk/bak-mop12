@@ -1,4 +1,4 @@
-const CACHE_NAME = 'akg-bakim-v4.1.6';
+const CACHE_NAME = 'akg-bakim-v4.1.7';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',

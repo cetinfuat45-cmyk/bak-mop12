@@ -691,10 +691,14 @@ function fetchOpenFaults() {
                 currentOpenFaults.push(data); // Aramak için kaydet
             });
 
+            // V4.1.7: Dashboard'da aktif müdahale bulunan arızalar her zaman en üstte.
+            const isDashboardActiveFault = fault =>
+                fault && fault.status === 'Müdahale Ediliyor' &&
+                (!!fault.assignedTo || !!fault.startedBy || (Array.isArray(fault.helpers) && fault.helpers.length > 0));
             faultDocs.sort((a, b) => {
-                const dateA = getTimestampMs(a.createdAt);
-                const dateB = getTimestampMs(b.createdAt);
-                return dateB - dateA;
+                const activeDiff = Number(isDashboardActiveFault(b)) - Number(isDashboardActiveFault(a));
+                if (activeDiff !== 0) return activeDiff;
+                return getTimestampMs(b.createdAt) - getTimestampMs(a.createdAt);
             });
 
             const today = new Date();
@@ -878,7 +882,17 @@ function fetchOpenFaults() {
                 if (!currentTypeGroups[key]) currentTypeGroups[key] = [];
                 currentTypeGroups[key].push(item);
             });
+            Object.values(currentTypeGroups).forEach(groupItems => {
+                groupItems.sort((a, b) => {
+                    const activeDiff = Number(isDashboardActiveFault(b.fault)) - Number(isDashboardActiveFault(a.fault));
+                    if (activeDiff !== 0) return activeDiff;
+                    return getTimestampMs(b.fault.createdAt) - getTimestampMs(a.fault.createdAt);
+                });
+            });
             const orderedCurrentTypes = Object.keys(currentTypeGroups).sort((a, b) => {
+                const aHasActive = currentTypeGroups[a].some(item => isDashboardActiveFault(item.fault));
+                const bHasActive = currentTypeGroups[b].some(item => isDashboardActiveFault(item.fault));
+                if (aHasActive !== bHasActive) return Number(bHasActive) - Number(aHasActive);
                 const ai = currentTypeOrder.indexOf(a);
                 const bi = currentTypeOrder.indexOf(b);
                 if (ai === -1 && bi === -1) return a.localeCompare(b, 'tr');
@@ -920,6 +934,7 @@ function fetchOpenFaults() {
                         const body = tableWrap.querySelector('tbody');
                         groupItems.forEach(item => {
                             const tr = document.createElement('tr');
+                            if (isDashboardActiveFault(item.fault)) tr.classList.add('dashboard-active-fault');
                             tr.style.backgroundColor = item.cardBg;
                             tr.style.borderLeft = `4px solid ${item.isSolid ? item.textColor : item.borderColor}`;
                             tr.onclick = () => handleFaultClick(item.fault);
@@ -953,6 +968,7 @@ function fetchOpenFaults() {
                                 ${item.statusLabelHtml}`;
                             const card = document.createElement('div');
                             card.className = 'fault-card';
+                            if (isDashboardActiveFault(item.fault)) card.classList.add('dashboard-active-fault');
                             if (guncelType === 'compact') card.classList.add('compact');
                             if (guncelType === 'accordion') card.classList.add('accordion');
                             card.style.backgroundColor = item.cardBg;

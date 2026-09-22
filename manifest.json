@@ -1,6 +1,6 @@
 {
-  "name": "AKG Bakım ve Arıza Paneli V4.1.6",
-  "short_name": "AKG Bakım V4.1.6",
+  "name": "AKG Bakım ve Arıza Paneli V4.1.7",
+  "short_name": "AKG Bakım V4.1.7",
   "description": "Bakım operatörleri için arıza bildirim ve yönetim paneli.",
   "start_url": "./index.html",
   "display": "standalone",
@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "id": "akg-bakim-v4-1-6"
+  "id": "akg-bakim-v4-1-7"
 }
