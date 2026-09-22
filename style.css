@@ -690,8 +690,8 @@ button, .fault-card, tr, select {
 /* V4.1.6 - Aktif müdahale kartı en üstte ve parlak #00FF00 çerçeveli */
 #multiple-faults-container .selection-fault-card.active-intervention-card {
     order: -1000 !important;
-    border: 4px solid #00FF00 !important;
-    border-left: 10px solid #00FF00 !important;
+    border: 1px solid #00FF00 !important;
+    border-left: 6px solid #00FF00 !important;
     box-shadow: 0 0 4px #00FF00, 0 0 14px rgba(0,255,0,.85) !important;
     animation: activeInterventionPureGreenBlink .65s linear infinite !important;
 }
@@ -721,8 +721,8 @@ button, .fault-card, tr, select {
 /* V4.1.7 - Dashboard aktif müdahale kartı */
 #today-faults-container .dashboard-active-fault {
     order: -1000 !important;
-    border: 4px solid #00FF00 !important;
-    border-left: 10px solid #00FF00 !important;
+    border: 1px solid #00FF00 !important;
+    border-left: 6px solid #00FF00 !important;
     box-shadow: 0 0 5px #00FF00, 0 0 18px rgba(0,255,0,.9) !important;
     animation: dashboardActiveGreenBlink .65s linear infinite !important;
     position: relative;
